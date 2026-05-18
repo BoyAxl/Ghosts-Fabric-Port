@@ -20,9 +20,6 @@ sourceSets {
         java {
             srcDir 'common/src/main/java'
             srcDir 'fabric/src/main/java'
-            exclude 'dev/xylonity/bonsai/ghosts/client/entity/render/HauntedBoatRenderer.java'
-            exclude 'dev/xylonity/bonsai/ghosts/client/entity/render/blockentity/**'
-            exclude 'dev/xylonity/bonsai/ghosts/client/blockentity/renderer/**'
         }
         resources {
             srcDir 'common/src/main/resources'
