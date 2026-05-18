@@ -3,6 +3,7 @@ package dev.xylonity.bonsai.ghosts.common.entity.ghost;
 import dev.xylonity.bonsai.ghosts.common.entity.AbstractGhostEntity;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.control.GhostMoveControl;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.generic.GhostWanderGoal;
+import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostFindBurrowGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostPickupSaplingGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostPlantSaplingGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.variant.SmallGhostVariant;
@@ -75,16 +76,12 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
         this.goalSelector.addGoal(2, new SmallGhostPlantSaplingGoal(this, 0.43D, 60, 8));
         this.goalSelector.addGoal(4, new SmallGhostPickupSaplingGoal(this, 0.43D, 0.1f, 10));
+        this.goalSelector.addGoal(5, new SmallGhostFindBurrowGoal(this, 0.43D, 16, 5));
 
         this.goalSelector.addGoal(9, new GhostWanderGoal(this, 0.43f) {
             @Override
             public boolean canUse() {
                 return super.canUse() && !getIsSleeping();
-            }
-
-            @Override
-            public void start() {
-                this.targetPos = new Vec3(wantedX, wantedY, wantedZ);
             }
         });
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 6.0F));
@@ -254,7 +251,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
             if (getHoldItem().isEmpty()) {
                 BlockState belowBlockState = level().getBlockState(this.blockPosition().below());
-                if (!isDayTime() && (belowBlockState.is(Blocks.GRASS_BLOCK) || belowBlockState.is(Blocks.DIRT))) {
+                if (!isDayTime() && isBurrowGround(belowBlockState)) {
                     if (!getIsSleeping()) {
                         setCdFullHide(36);
                     }
@@ -298,6 +295,10 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
     private boolean isDayTime() {
         return level().isBrightOutside();
+    }
+
+    public static boolean isBurrowGround(BlockState state) {
+        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT);
     }
 
     private void moveToPos(Vec3 target, double speed, float lerp) {
