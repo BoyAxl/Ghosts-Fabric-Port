@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 public class HauntedButton extends ButtonBlock {
 
     public HauntedButton(Properties properties, BlockSetType type, int ticksToStayPressed, boolean arrowsCanPress) {
-        super(properties, type, ticksToStayPressed, arrowsCanPress);
+        super(type, ticksToStayPressed, properties);
     }
 
 }

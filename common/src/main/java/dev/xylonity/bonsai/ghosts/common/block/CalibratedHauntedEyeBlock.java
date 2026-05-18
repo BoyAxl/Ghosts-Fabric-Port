@@ -1,5 +1,6 @@
 package dev.xylonity.bonsai.ghosts.common.block;
 
+import com.mojang.serialization.MapCodec;
 import dev.xylonity.bonsai.ghosts.common.blockentity.CalibratedHauntedEyeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,11 +22,12 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class CalibratedHauntedEyeBlock extends DirectionalBlock implements EntityBlock {
 
+    public static final MapCodec<CalibratedHauntedEyeBlock> CODEC = simpleCodec(CalibratedHauntedEyeBlock::new);
     public static final IntegerProperty POWER = BlockStateProperties.POWER;
     private static final double MAX_DETECTION_DISTANCE = 15.0;
 
@@ -34,6 +36,11 @@ public class CalibratedHauntedEyeBlock extends DirectionalBlock implements Entit
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(POWER, 0));
+    }
+
+    @Override
+    protected MapCodec<CalibratedHauntedEyeBlock> codec() {
+        return CODEC;
     }
 
     @Override
@@ -50,7 +57,7 @@ public class CalibratedHauntedEyeBlock extends DirectionalBlock implements Entit
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             level.scheduleTick(pos, this, 1);
         }
 
@@ -72,7 +79,7 @@ public class CalibratedHauntedEyeBlock extends DirectionalBlock implements Entit
     private int calculatePowerLevel(Level level, BlockPos pos, BlockState state) {
         final Direction facing = state.getValue(FACING);
         final Vec3 eyePos = Vec3.atCenterOf(pos);
-        final Vec3 lookDirection = Vec3.atLowerCornerOf(facing.getNormal());
+        final Vec3 lookDirection = facing.getUnitVec3();
 
         final List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, createSearchArea(pos, facing), entity -> !entity.isSpectator());
 
@@ -141,8 +148,8 @@ public class CalibratedHauntedEyeBlock extends DirectionalBlock implements Entit
     private void updateNeighbors(Level level, BlockPos pos, BlockState state) {
         Direction out = state.getValue(FACING);
         BlockPos target = pos.relative(out);
-        level.neighborChanged(target, this, pos);
-        level.updateNeighborsAtExceptFromFacing(target, this, out.getOpposite());
+        level.neighborChanged(target, this, null);
+        level.updateNeighborsAtExceptFromFacing(target, this, out.getOpposite(), null);
     }
 
     @Override

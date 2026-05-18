@@ -1,0 +1,47 @@
+{
+  "item.ghosts.ghost_spawn_egg": "Huevo generador de fantasma",
+  "entity.ghosts.ghost": "Fantasma",
+
+  "item.ghosts.small_ghost_spawn_egg": "Huevo generador de fantasma brote",
+  "entity.ghosts.small_ghost": "Fantasma brote",
+
+  "item.ghosts.kodama_spawn_egg": "Huevo generador de kodama",
+  "entity.ghosts.kodama": "Kodama",
+
+  "ghosts.ghost_ambient": "Fantasma silba",
+  "ghosts.ghost_death": "Fantasma muere",
+  "ghosts.ghost_hurt": "Fantasma recibe daño",
+  "ghosts.mini_ghost_ambient": "Fantasma brote silba",
+  "ghosts.mini_ghost_death": "Fantasma brote muere",
+  "ghosts.mini_ghost_hurt": "Fantasma brote recibe daño",
+
+  "block.ghosts.haunted_sapling": "Brote embrujado",
+  "block.ghosts.haunted_log": "Tronco embrujado",
+  "block.ghosts.stripped_haunted_log": "Tronco embrujado sin corteza",
+  "block.ghosts.haunted_planks": "Tablones embrujados",
+  "block.ghosts.haunted_slab": "Losa embrujada",
+  "block.ghosts.haunted_stairs": "Escaleras embrujadas",
+  "block.ghosts.haunted_leaves": "Hojas embrujadas",
+  "block.ghosts.haunted_eye_log": "Tronco embrujado con ojo",
+  "block.ghosts.haunted_door": "Puerta embrujada",
+  "block.ghosts.haunted_trapdoor": "Trampilla embrujada",
+  "block.ghosts.haunted_fence": "Valla embrujada",
+  "block.ghosts.haunted_fence_gate": "Puerta de valla embrujada",
+  "block.ghosts.haunted_button": "Botón embrujado",
+  "block.ghosts.haunted_sign": "Letrero embrujado",
+  "block.ghosts.haunted_hanging_sign": "Letrero colgante embrujado",
+  "block.ghosts.haunted_pressure_plate": "Placa de presión embrujada",
+  "block.ghosts.calibrated_haunted_eye": "Ojo embrujado calibrado",
+
+  "entity.ghosts.client_message.interaction_0": "%1$s ahora está sentado",
+  "entity.ghosts.client_message.interaction_1": "%1$s ahora te sigue",
+  "entity.ghosts.client_message.interaction_2": "%1$s ahora deambula por ahí",
+
+  "entity.ghosts.haunted_boat": "Bote embrujado",
+  "entity.ghosts.haunted_chest_boat": "Bote embrujado con cofre",
+
+  "item.ghosts.haunted_boat": "Bote embrujado",
+  "item.ghosts.haunted_chest_boat": "Bote embrujado con cofre",
+
+  "creativetab.ghosts.title": "Fantasmas"
+}

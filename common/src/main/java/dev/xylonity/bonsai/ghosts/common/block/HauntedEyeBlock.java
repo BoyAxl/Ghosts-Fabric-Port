@@ -1,5 +1,6 @@
 package dev.xylonity.bonsai.ghosts.common.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -14,10 +15,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.AABB;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class HauntedEyeBlock extends HorizontalDirectionalBlock {
 
+    public static final MapCodec<HauntedEyeBlock> CODEC = simpleCodec(HauntedEyeBlock::new);
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
     public HauntedEyeBlock(Properties properties) {
@@ -28,6 +30,11 @@ public class HauntedEyeBlock extends HorizontalDirectionalBlock {
                         .setValue(FACING, Direction.NORTH)
         );
 
+    }
+
+    @Override
+    protected MapCodec<HauntedEyeBlock> codec() {
+        return CODEC;
     }
 
     @Nullable
@@ -43,7 +50,7 @@ public class HauntedEyeBlock extends HorizontalDirectionalBlock {
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             level.scheduleTick(pos, this, 1);
         }
 

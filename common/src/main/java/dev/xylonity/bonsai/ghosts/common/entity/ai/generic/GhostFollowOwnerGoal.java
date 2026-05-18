@@ -10,8 +10,6 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import net.minecraft.world.level.pathfinder.FlyNodeEvaluator;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -126,7 +124,7 @@ public class GhostFollowOwnerGoal extends Goal {
         } else if (!this.canTeleportTo(new BlockPos(pX, pY, pZ))) {
             return false;
         } else {
-            this.ghost.moveTo(pX + 0.5F, pY, pZ + 0.5F, this.ghost.getYRot(), this.ghost.getXRot());
+            this.ghost.snapTo(pX + 0.5F, pY, pZ + 0.5F, this.ghost.getYRot(), this.ghost.getXRot());
             this.navigation.stop();
             return true;
         }
@@ -134,7 +132,7 @@ public class GhostFollowOwnerGoal extends Goal {
     }
 
     private boolean canTeleportTo(BlockPos pPos) {
-        if (FlyNodeEvaluator.getBlockPathTypeStatic(this.ghost.level(), pPos.mutable()) != BlockPathTypes.WALKABLE) {
+        if (!this.ghost.level().getBlockState(pPos).isAir()) {
             return false;
         } else {
             if ( this.ghost.level().getBlockState(pPos.below()).getBlock() instanceof LeavesBlock) {

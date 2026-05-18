@@ -1,5 +1,6 @@
 package dev.xylonity.bonsai.ghosts.common.block;
 
+import com.mojang.serialization.MapCodec;
 import dev.xylonity.bonsai.ghosts.registry.GhostsParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -9,8 +10,20 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class HauntedLeaves extends LeavesBlock {
 
+    public static final MapCodec<HauntedLeaves> CODEC = simpleCodec(HauntedLeaves::new);
+
     public HauntedLeaves(Properties properties) {
-        super(properties);
+        super(0.01F, properties);
+    }
+
+    @Override
+    public MapCodec<HauntedLeaves> codec() {
+        return CODEC;
+    }
+
+    @Override
+    protected void spawnFallingLeavesParticle(Level level, BlockPos pos, RandomSource random) {
+        ;;
     }
 
     @Override

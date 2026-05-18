@@ -19,9 +19,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.BoatRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import org.joml.Quaternionf;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 
 public class HauntedBoatRenderer extends BoatRenderer {
 
-    private final Map<HauntedBoat.Type, Pair<ResourceLocation, ListModel<Boat>>> boatResources;
+    private final Map<HauntedBoat.Type, Pair<Identifier, ListModel<Boat>>> boatResources;
 
     public HauntedBoatRenderer(EntityRendererProvider.Context context, boolean chestBoat) {
         super(context, chestBoat);
@@ -55,7 +55,7 @@ public class HauntedBoatRenderer extends BoatRenderer {
         return new ModelLayerLocation(Ghosts.of("chest_boat/" + type.getName()), "main");
     }
 
-    public Pair<ResourceLocation, ListModel<Boat>> getModelWithLocation(Boat boat) {
+    public Pair<Identifier, ListModel<Boat>> getModelWithLocation(Boat boat) {
         if (boat instanceof HauntedBoat b) {
             return this.boatResources.get(b.getBoatVariant());
         }
@@ -68,7 +68,7 @@ public class HauntedBoatRenderer extends BoatRenderer {
 
     @Override
     public void render(Boat entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        Pair<ResourceLocation, ListModel<Boat>> pair = getModelWithLocation(entity);
+        Pair<Identifier, ListModel<Boat>> pair = getModelWithLocation(entity);
         if (pair == null) {
             super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
             return;
@@ -92,7 +92,7 @@ public class HauntedBoatRenderer extends BoatRenderer {
             poseStack.mulPose(new Quaternionf().setAngleAxis(f2 * ((float) Math.PI / 180F), 1.0F, 0.0F, 1.0F));
         }
 
-        ResourceLocation texture = pair.getFirst();
+        Identifier texture = pair.getFirst();
         ListModel<Boat> model = pair.getSecond();
 
         poseStack.scale(-1.0F, -1.0F, 1.0F);
@@ -113,8 +113,8 @@ public class HauntedBoatRenderer extends BoatRenderer {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(Boat entity) {
-        Pair<ResourceLocation, ListModel<Boat>> pair = getModelWithLocation(entity);
+    public Identifier getTextureLocation(Boat entity) {
+        Pair<Identifier, ListModel<Boat>> pair = getModelWithLocation(entity);
         if (pair != null) {
             return pair.getFirst();
         }

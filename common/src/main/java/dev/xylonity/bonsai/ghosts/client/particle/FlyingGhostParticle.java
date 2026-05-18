@@ -2,14 +2,15 @@ package dev.xylonity.bonsai.ghosts.client.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import java.util.Random;
 
-public class FlyingGhostParticle extends TextureSheetParticle {
+public class FlyingGhostParticle extends SingleQuadParticle {
 
     private static final int FRAME_TICKS = 4;
     private static final int FRAMES = 8;
@@ -22,7 +23,7 @@ public class FlyingGhostParticle extends TextureSheetParticle {
     private final float floatAmplitude;
 
     FlyingGhostParticle(ClientLevel world, double x, double y, double z, SpriteSet sprites, double velX, double velY, double velZ) {
-        super(world, x, y + 0.5, z, 0.0, 0.0, 0.0);
+        super(world, x, y + 0.5, z, 0.0, 0.0, 0.0, sprites.first());
 
         this.quadSize = 0.2f;
         this.rCol = 1F;
@@ -45,13 +46,18 @@ public class FlyingGhostParticle extends TextureSheetParticle {
     }
 
     @Override
-    protected int getLightColor(float partialTick) {
-        return LightTexture.FULL_BRIGHT;
+    protected int getLightCoords(float partialTick) {
+        return LightCoordsUtil.FULL_BRIGHT;
     }
 
     @Override
-    public @Nonnull ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public @NotNull ParticleRenderType getGroup() {
+        return ParticleRenderType.SINGLE_QUADS;
+    }
+
+    @Override
+    protected @NotNull Layer getLayer() {
+        return Layer.TRANSLUCENT;
     }
 
     @Override
@@ -83,7 +89,7 @@ public class FlyingGhostParticle extends TextureSheetParticle {
             this.sprites = spriteSet;
         }
 
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level, double x, double y, double z, double dx, double dy, double dz) {
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level, double x, double y, double z, double dx, double dy, double dz, RandomSource random) {
             return new FlyingGhostParticle(level, x, y, z, this.sprites, dx, dy, dz);
         }
 

@@ -1,7 +1,6 @@
 package dev.xylonity.bonsai.ghosts.common.entity;
 
 import dev.xylonity.bonsai.ghosts.util.GhostOwnerTracker;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -11,15 +10,20 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.InstancedAnimatableInstanceCache;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.util.GeckoLibUtil;
+
+import java.util.UUID;
 
 public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEntity {
 
@@ -42,7 +46,7 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
     public void tick() {
         super.tick();
 
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             if (getOwnerUUID() != null) {
                 if (!isTracked) {
                     GhostOwnerTracker.getInstance().addGhost(this);
@@ -58,7 +62,7 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
 
     @Override
     public void remove(RemovalReason reason) {
-        if (!level().isClientSide && isTracked) {
+        if (!level().isClientSide() && isTracked) {
             GhostOwnerTracker.getInstance().removeGhost(this);
             isTracked = false;
         }
@@ -68,17 +72,17 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
 
     private void ensureChunkForced() {
         if (level() instanceof ServerLevel serverLevel) {
-            ChunkPos chunkPosition = new ChunkPos(blockPosition());
-            long now = chunkPosition.toLong();
+            ChunkPos chunkPosition = ChunkPos.containing(blockPosition());
+            long now = chunkPosition.pack();
 
             if (chunkForced && forcedChunk != now) {
-                ChunkPos old = new ChunkPos(forcedChunk);
-                serverLevel.setChunkForced(old.x, old.z, false);
+                ChunkPos old = ChunkPos.unpack(forcedChunk);
+                serverLevel.setChunkForced(old.x(), old.z(), false);
                 chunkForced = false;
             }
 
             if (!chunkForced) {
-                serverLevel.setChunkForced(chunkPosition.x, chunkPosition.z, true);
+                serverLevel.setChunkForced(chunkPosition.x(), chunkPosition.z(), true);
                 forcedChunk = now;
                 chunkForced = true;
             }
@@ -88,9 +92,9 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(MAIN_INTERACTION, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(MAIN_INTERACTION, 0);
     }
 
     public void cycleMainInteraction(Player player) {
@@ -100,9 +104,9 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
 
         if (player != null) {
             switch (interaction) {
-                case 0 -> player.displayClientMessage(Component.translatable("entity.ghosts.client_message.interaction_0", this.getName()), true);
-                case 1 -> player.displayClientMessage(Component.translatable("entity.ghosts.client_message.interaction_1", this.getName()), true);
-                case 2 -> player.displayClientMessage(Component.translatable("entity.ghosts.client_message.interaction_2", this.getName()), true);
+                case 0 -> player.sendOverlayMessage(Component.translatable("entity.ghosts.client_message.interaction_0", this.getName()));
+                case 1 -> player.sendOverlayMessage(Component.translatable("entity.ghosts.client_message.interaction_1", this.getName()));
+                case 2 -> player.sendOverlayMessage(Component.translatable("entity.ghosts.client_message.interaction_2", this.getName()));
             }
 
         }
@@ -131,9 +135,9 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {
         if (source.is(DamageTypes.IN_WALL)) return false;
-        return super.hurt(source, amount);
+        return super.hurtServer(serverLevel, source, amount);
     }
 
     public void setMainInteraction(int interaction) {
@@ -145,19 +149,33 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        this.setMainInteraction(compound.getInt("MainInteraction"));
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        this.setMainInteraction(input.getIntOr("MainInteraction", 0));
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        compound.putInt("MainInteraction", getMainInteraction());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("MainInteraction", getMainInteraction());
     }
 
     public ItemStack getHoldItem() {
         return this.getItemBySlot(EquipmentSlot.MAINHAND);
+    }
+
+    public UUID getOwnerUUID() {
+        var owner = this.getOwnerReference();
+        return owner == null ? null : owner.getUUID();
+    }
+
+    @Override
+    public boolean isFood(ItemStack stack) {
+        return stack.is(Items.GLOW_BERRIES);
+    }
+
+    protected ItemEntity spawnAtLocation(ItemStack stack, float yOffset) {
+        return level() instanceof ServerLevel serverLevel ? super.spawnAtLocation(serverLevel, stack, yOffset) : null;
     }
 
     @Override

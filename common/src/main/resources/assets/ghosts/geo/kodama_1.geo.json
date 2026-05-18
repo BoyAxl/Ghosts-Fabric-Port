@@ -44,7 +44,7 @@
 				{
 					"name": "item",
 					"parent": "right_arm",
-					"pivot": [-2.1, 1.8, 0],
+					"pivot": [-2.1, 0.55, 0],
 					"rotation": [-90, 0, 0]
 				},
 				{

@@ -5,7 +5,7 @@ import dev.xylonity.bonsai.ghosts.configurations.tree.GhostsTreeConfigurationBui
 import dev.xylonity.bonsai.ghosts.configurations.tree.HauntedFoliagePlacer;
 import dev.xylonity.bonsai.ghosts.configurations.tree.HauntedTrunkPlacer;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -19,7 +19,7 @@ public class GhostsConfiguredFeatures {
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> HAUNTED_TREE = ResourceKey.create(Registries.CONFIGURED_FEATURE, Ghosts.of("haunted_tree"));
 
-    public static void register(BootstapContext<ConfiguredFeature<?, ?>> context) {
+    public static void register(BootstrapContext<ConfiguredFeature<?, ?>> context) {
         context.register(HAUNTED_TREE, new ConfiguredFeature<>(Feature.TREE,
                 new GhostsTreeConfigurationBuilder(
                         BlockStateProvider.simple(GhostsBlocks.HAUNTED_LOG.get()),

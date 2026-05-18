@@ -9,7 +9,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 
 public class GhostWanderGoal extends Goal {
@@ -73,7 +73,7 @@ public class GhostWanderGoal extends Goal {
             double dy = (ghost.getRandom().nextDouble() * 2 - 1);
 
             Vec3 c = origin.add(dx, dy, dz);
-            c = new Vec3(c.x, Mth.clamp(c.y, ghost.level().getMinBuildHeight() + 1, ghost.level().getMaxBuildHeight() - 1), c.z);
+            c = new Vec3(c.x, Mth.clamp(c.y, ghost.level().getMinY() + 1, ghost.level().getMaxY() - 1), c.z);
 
             if (!isSafePosition(c)) continue;
             return c;

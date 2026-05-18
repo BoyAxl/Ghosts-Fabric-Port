@@ -1,16 +1,18 @@
 package dev.xylonity.bonsai.ghosts.platform;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import dev.xylonity.bonsai.ghosts.Ghosts;
-import dev.xylonity.bonsai.ghosts.GhostsFabric;
 import dev.xylonity.bonsai.ghosts.registry.GhostsBlockEntities;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.fabricmc.fabric.api.object.builder.v1.block.type.WoodTypeRegistry;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
+import net.fabricmc.fabric.api.object.builder.v1.block.type.WoodTypeBuilder;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.item.BlockItem;
@@ -27,7 +29,7 @@ import net.minecraft.world.level.levelgen.feature.foliageplacers.FoliagePlacerTy
 import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacer;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -46,7 +48,7 @@ public class GhostsPlatformFabric implements GhostsPlatform {
         Supplier<X> blockSupplier = registerSupplier(BuiltInRegistries.BLOCK, id, block);
 
         if (registerItem) {
-            registerItem(id, () -> new BlockItem(blockSupplier.get(), new Item.Properties()));
+            registerItem(id, () -> new BlockItem(blockSupplier.get(), itemProperties(id).useBlockDescriptionPrefix()));
         }
 
         return blockSupplier;
@@ -59,7 +61,7 @@ public class GhostsPlatformFabric implements GhostsPlatform {
                     .map(Supplier::get)
                     .toArray(Block[]::new);
 
-            return BlockEntityType.Builder.of(supplier::create, blockArray).build(null);
+            return FabricBlockEntityTypeBuilder.create(supplier::create, blockArray).build();
         });
 
     }
@@ -76,7 +78,7 @@ public class GhostsPlatformFabric implements GhostsPlatform {
 
     @Override
     public <T extends Item, X extends LivingEntity> Supplier<T> registerSpawnEgg(String id, Supplier<? extends EntityType<? extends Mob>> entity, int color1, int color2, Item.Properties properties) {
-        return (Supplier<T>) registerItem(id, () -> new SpawnEggItem(entity.get(), color1, color2, properties));
+        return (Supplier<T>) registerItem(id, () -> new SpawnEggItem(properties.spawnEgg(entity.get())));
     }
 
     @Override
@@ -90,7 +92,7 @@ public class GhostsPlatformFabric implements GhostsPlatform {
                 }
             }
 
-            return builder.build(new ResourceLocation(Ghosts.MOD_ID, name).toString());
+            return builder.build(ResourceKey.create(Registries.ENTITY_TYPE, Ghosts.of(name)));
         });
     }
 
@@ -100,29 +102,33 @@ public class GhostsPlatformFabric implements GhostsPlatform {
     }
 
     @Override
-    public <U extends TrunkPlacer> Supplier<TrunkPlacerType<U>> registerTrunkPlacer(String id, Codec<U> codec) {
+    public <U extends TrunkPlacer> Supplier<TrunkPlacerType<U>> registerTrunkPlacer(String id, MapCodec<U> codec) {
         return registerSupplier(BuiltInRegistries.TRUNK_PLACER_TYPE, id, () -> new TrunkPlacerType<>(codec));
     }
 
     @Override
-    public <U extends FoliagePlacer> Supplier<FoliagePlacerType<U>> registerFoliagePlacer(String id, Codec<U> codec) {
+    public <U extends FoliagePlacer> Supplier<FoliagePlacerType<U>> registerFoliagePlacer(String id, MapCodec<U> codec) {
         return registerSupplier(BuiltInRegistries.FOLIAGE_PLACER_TYPE, id, () -> new FoliagePlacerType<>(codec));
     }
 
     @Override
-    public WoodType registerWoodType(ResourceLocation id, BlockSetType setType) {
-        return WoodTypeRegistry.register(id, setType);
+    public WoodType registerWoodType(Identifier id, BlockSetType setType) {
+        return WoodTypeBuilder.copyOf(WoodType.ACACIA).register(id, setType);
     }
 
     @Override
     public CreativeModeTab.Builder creativeTabBuilder() {
-        return FabricItemGroup.builder();
+        return FabricCreativeModeTab.builder();
     }
 
     private static <T, R extends Registry<? super T>> Supplier<T> registerSupplier(R registry, String id, Supplier<T> factory) {
         T value = factory.get();
-        Registry.register((Registry<T>) registry, new ResourceLocation(Ghosts.MOD_ID, id), value);
+        Registry.register((Registry<T>) registry, Ghosts.of(id), value);
         return () -> value;
+    }
+
+    private static Item.Properties itemProperties(String id) {
+        return new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Ghosts.of(id)));
     }
 
 }

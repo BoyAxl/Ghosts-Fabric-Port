@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -37,7 +37,7 @@ public class SmallGhostPickupSaplingGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getIsSleeping()) {
@@ -59,7 +59,7 @@ public class SmallGhostPickupSaplingGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getIsSleeping()) {

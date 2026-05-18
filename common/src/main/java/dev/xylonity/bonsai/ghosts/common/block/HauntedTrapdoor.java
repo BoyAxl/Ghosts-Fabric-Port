@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 public class HauntedTrapdoor extends TrapDoorBlock {
 
     public HauntedTrapdoor(Properties properties, BlockSetType type) {
-        super(properties, type);
+        super(type, properties);
     }
 
 }

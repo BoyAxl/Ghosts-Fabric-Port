@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "#": "ghosts:haunted_planks",
+    "Q": "ghosts:haunted_eye_log",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "###",
+    "RRQ",
+    "###"
+  ],
+  "result": {
+    "id": "ghosts:calibrated_haunted_eye"
+  }
+}

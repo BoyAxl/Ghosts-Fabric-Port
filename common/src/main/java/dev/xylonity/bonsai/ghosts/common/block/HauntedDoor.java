@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 public class HauntedDoor extends DoorBlock {
 
     public HauntedDoor(Properties properties, BlockSetType type) {
-        super(properties, type);
+        super(type, properties);
     }
 
 }

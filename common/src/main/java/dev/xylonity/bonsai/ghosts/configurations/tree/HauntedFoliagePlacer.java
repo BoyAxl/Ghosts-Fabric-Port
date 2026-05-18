@@ -1,13 +1,13 @@
 package dev.xylonity.bonsai.ghosts.configurations.tree;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.xylonity.bonsai.ghosts.registry.GhostsFoliagePlacers;
 import dev.xylonity.bonsai.ghosts.registry.GhostsBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.IntProvider;
-import net.minecraft.world.level.LevelSimulatedReader;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.levelgen.feature.configurations.TreeConfiguration;
 import net.minecraft.world.level.levelgen.feature.foliageplacers.BlobFoliagePlacer;
@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.feature.foliageplacers.FoliagePlacerTy
 
 public class HauntedFoliagePlacer extends BlobFoliagePlacer {
 
-    public static final Codec<HauntedFoliagePlacer> CODEC = RecordCodecBuilder.create((instance) ->
+    public static final MapCodec<HauntedFoliagePlacer> CODEC = RecordCodecBuilder.mapCodec((instance) ->
             blobParts(instance).apply(instance, HauntedFoliagePlacer::new)
     );
 
@@ -29,7 +29,7 @@ public class HauntedFoliagePlacer extends BlobFoliagePlacer {
     }
 
     @Override
-    protected void createFoliage(LevelSimulatedReader level, FoliageSetter blockSetter, RandomSource random, TreeConfiguration config, int maxFreeTreeHeight, FoliageAttachment attachment, int foliageHeight, int foliageRadius, int offset) {
+    protected void createFoliage(WorldGenLevel level, FoliageSetter blockSetter, RandomSource random, TreeConfiguration config, int maxFreeTreeHeight, FoliageAttachment attachment, int foliageHeight, int foliageRadius, int offset) {
         int baseRadius = foliageRadius + attachment.radiusOffset();
 
         this.placeLeavesRow(level, blockSetter, random, config, attachment.pos(), baseRadius, -1, attachment.doubleTrunk());
@@ -47,7 +47,7 @@ public class HauntedFoliagePlacer extends BlobFoliagePlacer {
                     if (distance == baseRadius) {
                         BlockPos leafPos = layerPos.offset(x, 0, z);
                         if (random.nextFloat() < 0.25f) {
-                            if (level.isStateAtPosition(leafPos, state -> state.is(config.foliageProvider.getState(random, leafPos).getBlock()))) {
+                            if (level.isStateAtPosition(leafPos, state -> state.is(config.foliageProvider.getState(level, random, leafPos).getBlock()))) {
                                 int hangingLength = 1 + random.nextInt(2);
                                 for (int h = 1; h <= hangingLength; ++h) {
                                     BlockPos hangingPos = leafPos.below(h);

@@ -1,18 +1,19 @@
 package dev.xylonity.bonsai.ghosts.configurations.tree;
 
 import dev.xylonity.bonsai.ghosts.registry.GhostsConfiguredFeatures;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.grower.AbstractTreeGrower;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.block.grower.TreeGrower;
 
-import javax.annotation.Nullable;
+import java.util.Optional;
 
-public class HauntedTreeGrower extends AbstractTreeGrower {
+public final class HauntedTreeGrower {
 
-    @Override
-    protected @Nullable ResourceKey<ConfiguredFeature<?, ?>> getConfiguredFeature(RandomSource randomSource, boolean b) {
-        return GhostsConfiguredFeatures.HAUNTED_TREE;
-    }
+    public static final TreeGrower HAUNTED = new TreeGrower(
+            "haunted",
+            Optional.empty(),
+            Optional.of(GhostsConfiguredFeatures.HAUNTED_TREE),
+            Optional.empty()
+    );
+
+    private HauntedTreeGrower() {}
 
 }

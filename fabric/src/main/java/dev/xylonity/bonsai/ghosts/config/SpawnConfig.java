@@ -3,7 +3,7 @@ package dev.xylonity.bonsai.ghosts.config;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 
@@ -16,13 +16,13 @@ import java.util.List;
  */
 public class SpawnConfig {
 
-    public final List<ResourceLocation> biomes;
+    public final List<Identifier> biomes;
     public final List<TagKey<Biome>> biomeTags;
     public final int weight;
     public final int minCount;
     public final int maxCount;
 
-    private SpawnConfig(int weight, int minCount, int maxCount, List<ResourceLocation> biomes, List<TagKey<Biome>> biomeTags) {
+    private SpawnConfig(int weight, int minCount, int maxCount, List<Identifier> biomes, List<TagKey<Biome>> biomeTags) {
         this.weight = weight;
         this.minCount = minCount;
         this.maxCount = maxCount;
@@ -36,16 +36,16 @@ public class SpawnConfig {
         int min = Integer.parseInt(parts[1]);
         int max = Integer.parseInt(parts[2]);
 
-        List<ResourceLocation> biomeList = new ArrayList<>();
+        List<Identifier> biomeList = new ArrayList<>();
         List<TagKey<Biome>> tagList = new ArrayList<>();
 
         for (int i = 3; i < parts.length; i++) {
             String part = parts[i];
             if (part.startsWith("#")) {
-                ResourceLocation tagId = new ResourceLocation(part.substring(1));
+                Identifier tagId = Identifier.parse(part.substring(1));
                 tagList.add(TagKey.create(Registries.BIOME, tagId));
             } else {
-                biomeList.add(new ResourceLocation(part));
+                biomeList.add(Identifier.parse(part));
             }
         }
 
@@ -53,7 +53,7 @@ public class SpawnConfig {
     }
 
     public boolean matches(Holder<Biome> biomeHolder) {
-        ResourceLocation biomeName = getBiomeName(biomeHolder);
+        Identifier biomeName = getBiomeName(biomeHolder);
         if (biomeName == null) {
             return false;
         }
@@ -71,8 +71,8 @@ public class SpawnConfig {
         return false;
     }
 
-    private static ResourceLocation getBiomeName(Holder<Biome> biomeHolder) {
-        return biomeHolder.unwrap().map(ResourceKey::location, noKey -> null);
+    private static Identifier getBiomeName(Holder<Biome> biomeHolder) {
+        return biomeHolder.unwrap().map(ResourceKey::identifier, noKey -> null);
     }
 
 }

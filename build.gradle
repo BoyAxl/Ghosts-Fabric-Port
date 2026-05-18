@@ -1,4 +1,89 @@
 plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT' apply(false)
-    id 'net.neoforged.moddev.legacyforge' version '2.0.77' apply(false)
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+group = maven_group
+version = mod_version
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'common/src/main/java'
+            srcDir 'fabric/src/main/java'
+            exclude 'dev/xylonity/bonsai/ghosts/client/entity/render/HauntedBoatRenderer.java'
+            exclude 'dev/xylonity/bonsai/ghosts/client/entity/render/blockentity/**'
+            exclude 'dev/xylonity/bonsai/ghosts/client/blockentity/renderer/**'
+        }
+        resources {
+            srcDir 'common/src/main/resources'
+            srcDir 'fabric/src/main/resources'
+        }
+    }
+}
+
+repositories {
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+
+    mavenCentral()
+
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    implementation "curse.maven:geckolib-388172:${geckolib_curseforge_file_id}"
+
+    compileOnly "org.jetbrains:annotations:26.0.2"
+
+    implementation include("com.electronwill.night-config:core:${night_config_version}")
+    implementation include("com.electronwill.night-config:toml:${night_config_version}")
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version    : minecraft_version,
+            fabric_loader_version: fabric_loader_version,
+            fabric_api_version   : fabric_api_version,
+            java_version         : java_version,
+            mod_id               : mod_id,
+            mod_name             : mod_name,
+            mod_author           : mod_author,
+            mod_version          : mod_version,
+            mod_description      : mod_description,
+            license              : license,
+            geckolib_version     : geckolib_version,
+    ]
+
+    inputs.properties replaceProperties
+
+    filesMatching(['fabric.mod.json', 'pack.mcmeta', '*.mixins.json']) {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
 }

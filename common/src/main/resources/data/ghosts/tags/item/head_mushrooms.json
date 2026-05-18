@@ -1,0 +1,16 @@
+{
+  "values": [
+    "minecraft:red_mushroom",
+    "minecraft:crimson_fungus",
+    "minecraft:warped_fungus",
+    {
+      "id": "cluttered:blue_roundhead",
+      "required": false
+    },
+    {
+      "id": "cluttered:fly_agaric",
+      "required": false
+    },
+    "minecraft:brown_mushroom"
+  ]
+}

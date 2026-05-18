@@ -6,7 +6,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,14 +13,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
 public class GhostPlaceGoal extends Goal {
 
     private final GhostEntity ghost;
-    private final Ingredient placeables;
+    private final Predicate<ItemStack> placeables;
     private final Predicate<BlockState> preference;
     private final int minLight;
     private final int retryCooldown;
@@ -37,7 +36,7 @@ public class GhostPlaceGoal extends Goal {
     @Nullable
     private BlockPos lastPlacedPos;
 
-    public GhostPlaceGoal(GhostEntity ghost, Ingredient placeables, Predicate<BlockState> pref, int lightThreshold, int retry, double speed) {
+    public GhostPlaceGoal(GhostEntity ghost, Predicate<ItemStack> placeables, Predicate<BlockState> pref, int lightThreshold, int retry, double speed) {
         this.ghost = ghost;
         this.placeables = placeables;
         this.preference = pref;
@@ -49,7 +48,7 @@ public class GhostPlaceGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getMainInteraction() != 1) {
@@ -94,7 +93,7 @@ public class GhostPlaceGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getMainInteraction() != 1) {

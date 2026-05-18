@@ -16,7 +16,7 @@ public class StayWhenOrderedToGoal extends SitWhenOrderedToGoal {
     public boolean canUse() {
         if (!mob.isTame()) {
             return false;
-        } else if (mob.isInWaterOrBubble()) {
+        } else if (mob.isInWater()) {
             return false;
         } else {
             return mob.isOrderedToSit();

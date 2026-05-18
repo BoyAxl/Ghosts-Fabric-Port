@@ -4,11 +4,12 @@ import dev.xylonity.bonsai.ghosts.common.entity.PassiveEntity;
 import dev.xylonity.bonsai.ghosts.registry.GhostsBlocks;
 import dev.xylonity.bonsai.ghosts.registry.GhostsSounds;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
@@ -18,12 +19,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -31,18 +32,17 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.*;
-import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.GeckoLib;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.InstancedAnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import com.geckolib.GeckoLib;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,6 @@ public class KodamaEntity extends PassiveEntity {
 
     public KodamaEntity(EntityType<? extends Animal> entityType, Level level) {
         super(entityType, level);
-        this.noCulling = true;
         this.flashAlpha = 0;
         setCanPickUpLoot(true);
     }
@@ -124,11 +123,11 @@ public class KodamaEntity extends PassiveEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(VARIANT, 0);
-        this.entityData.define(RATTLING_TICKS, 0);
-        this.entityData.define(BARTER_TICKS, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(VARIANT, 0);
+        builder.define(RATTLING_TICKS, 0);
+        builder.define(BARTER_TICKS, 0);
     }
 
     public void setFlashAlpha(float flashAlpha) {
@@ -172,7 +171,7 @@ public class KodamaEntity extends PassiveEntity {
     }
 
     @Override
-    public boolean wantsToPickUp(ItemStack stack) {
+    public boolean wantsToPickUp(ServerLevel serverLevel, ItemStack stack) {
         if (isBartering() || getRattlingTicks() > 0 || shouldPanic() || !onGround()) {
             return false;
         }
@@ -185,11 +184,11 @@ public class KodamaEntity extends PassiveEntity {
     }
 
     @Override
-    protected void pickUpItem(ItemEntity itemEntity) {
+    protected void pickUpItem(ServerLevel serverLevel, ItemEntity itemEntity) {
         ItemStack stack = itemEntity.getItem();
         boolean isAmethyst = stack.is(Items.AMETHYST_SHARD);
 
-        if (!level().isClientSide && isAmethyst) {
+        if (!level().isClientSide() && isAmethyst) {
             if (stack.getCount() > 1) {
                 ItemStack one = stack.split(1);
                 itemEntity.setItem(stack);
@@ -207,9 +206,9 @@ public class KodamaEntity extends PassiveEntity {
         }
 
         boolean wasAmethyst = stack.is(Items.AMETHYST_SHARD);
-        super.pickUpItem(itemEntity);
+        super.pickUpItem(serverLevel, itemEntity);
 
-        if (!level().isClientSide && wasAmethyst) {
+        if (!level().isClientSide() && wasAmethyst) {
             this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AMETHYST_SHARD));
             if (!isBartering()) {
                 setBarterTicks(1);
@@ -229,7 +228,7 @@ public class KodamaEntity extends PassiveEntity {
                 return InteractionResult.SUCCESS;
             }
 
-            if (!level().isClientSide) {
+            if (!level().isClientSide()) {
                 if (!player.getAbilities().instabuild) {
                     inHand.shrink(1);
                 }
@@ -252,8 +251,8 @@ public class KodamaEntity extends PassiveEntity {
 
         super.tick();
 
-        if (!level().isClientSide) {
-            long dayTime = level().getDayTime() % 24000;
+        if (!level().isClientSide()) {
+            long dayTime = level().getGameTime() % 24000;
 
             if (!shouldPanic() && getRattlingTicks() <= 0) {
                 if (dayTime >= 13000 && dayTime <= 13200) {
@@ -301,29 +300,25 @@ public class KodamaEntity extends PassiveEntity {
 
     private ItemStack getRandomSaplingStack() {
         List<Item> items = new ArrayList<>();
-        BuiltInRegistries.ITEM.getTag(ItemTags.SAPLINGS).ifPresent(named -> {
-            named.forEach(holder -> {
-                Item item = holder.value();
+        for (Holder<Item> holder : BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.SAPLINGS)) {
+            Item item = holder.value();
+            if (item == Items.AZALEA || item == Items.FLOWERING_AZALEA) {
+                continue;
+            }
 
-                if (item == Items.AZALEA || item == Items.FLOWERING_AZALEA) {
-                    return;
-                }
-
-                items.add(item);
-            });
-
-        });
+            items.add(item);
+        }
 
         if (items.isEmpty()) {
             return ItemStack.EMPTY;
         }
 
-        Item picked = items.get(level().random.nextInt(items.size()));
+        Item picked = items.get(getRandom().nextInt(items.size()));
         return new ItemStack(picked);
     }
 
     private void startRattling(float chance) {
-        if (level().random.nextFloat() > chance) {
+        if (getRandom().nextFloat() > chance) {
             return;
         }
 
@@ -332,38 +327,36 @@ public class KodamaEntity extends PassiveEntity {
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains("Variant")) {
-            setVariant(compound.getInt("Variant"));
-        }
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.getInt("Variant").ifPresent(this::setVariant);
 
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        compound.putInt("Variant", getVariant());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("Variant", getVariant());
     }
 
-    public static boolean checkKodamaSpawnRules(EntityType<? extends Animal> kodama, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
-        long dayTime = level.getLevel().getDayTime() % 24000;
+    public static boolean checkKodamaSpawnRules(EntityType<? extends Animal> kodama, ServerLevelAccessor level, EntitySpawnReason spawnType, BlockPos pos, RandomSource random) {
+        long dayTime = level.getLevel().getGameTime() % 24000;
         boolean isNight = dayTime >= 13000 && dayTime <= 23000;
         return isNight && checkMobSpawnRules(kodama, level, spawnType, pos, random);
     }
 
     @Override
-    public int getExperienceReward() {
-        return level().random.nextInt(4) + 2;
+    protected int getBaseExperienceReward(ServerLevel serverLevel) {
+        return serverLevel.getRandom().nextInt(4) + 2;
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, SpawnGroupData spawnData, CompoundTag dataTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, EntitySpawnReason reason, SpawnGroupData spawnData) {
         if (getVariant() == 0) {
-            setVariant(level.getLevel().random.nextInt(4) + 1);
+            setVariant(level.getRandom().nextInt(4) + 1);
         }
 
-        return super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
+        return super.finalizeSpawn(level, difficulty, reason, spawnData);
     }
 
     @Override
@@ -378,13 +371,13 @@ public class KodamaEntity extends PassiveEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-        controllerRegistrar.add(new AnimationController<>(this, "controller", 2, this::predicate));
+        controllerRegistrar.add(new AnimationController<>("controller", 2, this::predicate));
     }
 
-    private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> event) {
+    private PlayState predicate(AnimationTest<KodamaEntity> event) {
 
         if (getRattlingTicks() == ANIMATION_RATTLING_TICKS - 1) {
-            rattleAnimationType = level().random.nextInt(2);
+            rattleAnimationType = getRandom().nextInt(2);
         }
 
         if (getBarterTicks() > 0) {

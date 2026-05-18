@@ -4,11 +4,12 @@ import dev.xylonity.bonsai.ghosts.common.entity.boat.HauntedBoat;
 import dev.xylonity.bonsai.ghosts.common.entity.boat.HauntedChestBoat;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -33,11 +34,12 @@ public class HauntedBoatItem extends Item {
         this.type = type;
     }
 
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    @Override
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
         HitResult hitresult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
         if (hitresult.getType() == HitResult.Type.MISS) {
-            return InteractionResultHolder.pass(itemstack);
+            return InteractionResult.PASS;
         }
         else {
             Vec3 vec3 = player.getViewVector(1.0F);
@@ -48,7 +50,7 @@ public class HauntedBoatItem extends Item {
                 for (Entity entity : list) {
                     AABB aabb = entity.getBoundingBox().inflate((double)entity.getPickRadius());
                     if (aabb.contains(vec31)) {
-                        return InteractionResultHolder.pass(itemstack);
+                        return InteractionResult.PASS;
                     }
 
                 }
@@ -56,7 +58,7 @@ public class HauntedBoatItem extends Item {
             }
 
             if (hitresult.getType() == HitResult.Type.BLOCK) {
-                Boat boat = this.getBoat(level, hitresult);
+                AbstractBoat boat = this.getBoat(level, hitresult);
                 if (boat instanceof HauntedBoat) {
                     ((HauntedBoat) boat).setBoatVariant(this.type);
                 }
@@ -66,32 +68,30 @@ public class HauntedBoatItem extends Item {
 
                 boat.setYRot(player.getYRot());
                 if (!level.noCollision(boat, boat.getBoundingBox())) {
-                    return InteractionResultHolder.fail(itemstack);
+                    return InteractionResult.FAIL;
                 }
                 else {
-                    if (!level.isClientSide) {
+                    if (!level.isClientSide()) {
                         level.addFreshEntity(boat);
                         level.gameEvent(player, GameEvent.ENTITY_PLACE, hitresult.getLocation());
-                        if (!player.getAbilities().instabuild) {
-                            itemstack.shrink(1);
-                        }
+                        itemstack.consume(1, player);
 
                     }
 
                     player.awardStat(Stats.ITEM_USED.get(this));
 
-                    return InteractionResultHolder.sidedSuccess(itemstack, level.isClientSide());
+                    return InteractionResult.SUCCESS;
                 }
             }
             else {
-                return InteractionResultHolder.pass(itemstack);
+                return InteractionResult.PASS;
             }
 
         }
 
     }
 
-    private Boat getBoat(Level level, HitResult hitResult) {
+    private AbstractBoat getBoat(Level level, HitResult hitResult) {
         return (this.hasChest ? new HauntedChestBoat(level, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z) : new HauntedBoat(level, hitResult.getLocation().x, hitResult.getLocation().y, hitResult.getLocation().z));
     }
 

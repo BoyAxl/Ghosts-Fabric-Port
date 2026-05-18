@@ -5,12 +5,15 @@ import dev.xylonity.bonsai.ghosts.common.entity.ai.control.GhostMoveControl;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.generic.*;
 import dev.xylonity.bonsai.ghosts.registry.GhostsSounds;
 import dev.xylonity.bonsai.ghosts.tag.GhostsTags;
-import net.minecraft.nbt.CompoundTag;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -23,26 +26,25 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.pathfinder.PathType;
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
-import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public class GhostEntity extends AbstractGhostEntity {
 
@@ -56,12 +58,11 @@ public class GhostEntity extends AbstractGhostEntity {
     public GhostEntity(EntityType<? extends TamableAnimal> entityType, Level level) {
         super(entityType, level);
 
-        this.setPathfindingMalus(BlockPathTypes.POWDER_SNOW, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_POWDER_SNOW, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.LAVA, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.BLOCKED, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, -1.0F);
+        this.setPathfindingMalus(PathType.POWDER_SNOW, -1.0F);
+        this.setPathfindingMalus(PathType.LAVA, -1.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.BLOCKED, -1.0F);
+        this.setPathfindingMalus(PathType.LEAVES, -1.0F);
 
         this.moveControl = new GhostMoveControl(this);
     }
@@ -71,7 +72,6 @@ public class GhostEntity extends AbstractGhostEntity {
 
         navigator.setCanOpenDoors(false);
         navigator.setCanFloat(true);
-        navigator.setCanPassDoors(true);
 
         return navigator;
     }
@@ -89,14 +89,14 @@ public class GhostEntity extends AbstractGhostEntity {
         this.goalSelector.addGoal(2, new StayWhenOrderedToGoal(this));
         this.goalSelector.addGoal(3, new GhostApproachHeldGlowBerriesGoal(this, 0.6D, 1.6D, 6.0D, 0.1f, 12));
         this.goalSelector.addGoal(7, new GhostFollowOwnerGoal(this, 0.6D, 3.0F, 7.0F, 0.2f));
-        this.goalSelector.addGoal(6, new GhostPlaceGoal(this, Ingredient.of(GhostsTags.GHOST_PLACEABLE), state -> true, 6, 10, 0.75));
+        this.goalSelector.addGoal(6, new GhostPlaceGoal(this, stack -> stack.is(GhostsTags.GHOST_PLACEABLE), state -> true, 6, 10, 0.75));
         this.goalSelector.addGoal(9, new GhostWanderGoal(this, 0.43f));
         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 6.0F));
     }
 
     @Override
-    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+    public boolean causeFallDamage(double fallDistance, float multiplier, DamageSource source) {
         return false;
     }
 
@@ -106,12 +106,12 @@ public class GhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(SHOULD_RESET_CD, false);
-        this.entityData.define(BLINK_CD, 0);
-        this.entityData.define(BLINK_ANIM_CD, 0);
-        this.entityData.define(SHOULD_UNENCHANT, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(SHOULD_RESET_CD, false);
+        builder.define(BLINK_CD, 0);
+        builder.define(BLINK_ANIM_CD, 0);
+        builder.define(SHOULD_UNENCHANT, false);
     }
 
     public void setHoldItem(ItemStack holdItem) {
@@ -168,9 +168,9 @@ public class GhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        compound.putInt("CdUnenchant", getCdUnenchant());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("CdUnenchant", getCdUnenchant());
     }
 
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
@@ -199,7 +199,7 @@ public class GhostEntity extends AbstractGhostEntity {
             }
         }
 
-        if (level().isClientSide) return InteractionResult.SUCCESS;
+        if (level().isClientSide()) return InteractionResult.SUCCESS;
 
         // Heal or cycle owner interaction state (per priority order)
         if (isTame() && player == getOwner()) {
@@ -207,31 +207,39 @@ public class GhostEntity extends AbstractGhostEntity {
                 // Healing
                 if (stack.getItem() == Items.GLOW_BERRIES && getHealth() < getMaxHealth()) {
                     this.heal(4f);
+                    return InteractionResult.SUCCESS;
                 }
-                // Armor equipped
-                else if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty() && (Mob.getEquipmentSlotForItem(stack) == EquipmentSlot.HEAD || stack.is(Items.BROWN_MUSHROOM) || stack.is(Items.RED_MUSHROOM))) {
-                    ItemStack copy = stack.copy();
-                    copy.setCount(1);
-                    this.setItemSlotAndDropWhenKilled(EquipmentSlot.HEAD, copy);
 
-                    if (!player.getAbilities().instabuild) stack.shrink(1);
+                // Head slot items use vanilla equipment sync, while mushroom items render on custom model bones.
+                if (isHeadEquipment(stack) || isHeadMushroomItem(stack)) {
+                    equipHeadItem(player, stack);
 
                     return InteractionResult.SUCCESS;
                 }
-                // Item equipped
-                else if (!stack.isEmpty() && getHoldItem().isEmpty()) {
-                    this.setHoldItem(stack.copy());
-                    stack.setCount(0);
-                }
+
                 // Item retrieval
-                else if (!getHoldItem().isEmpty()) {
+                if (!getHoldItem().isEmpty()) {
                     this.spawnAtLocation(this.getHoldItem(), 0.5F);
                     setHoldItem(ItemStack.EMPTY);
+
+                    return InteractionResult.SUCCESS;
                 }
-                // Armor unequipped
-                else if (!this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-                    this.spawnAtLocation(this.getItemBySlot(EquipmentSlot.HEAD), 0.5F);
-                    this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+
+                // Item equipped
+                if (!stack.isEmpty()) {
+                    this.setHoldItem(stack.copy());
+                    if (!player.getAbilities().instabuild) stack.setCount(0);
+
+                    return InteractionResult.SUCCESS;
+                }
+
+                // Head item unequipped
+                ItemStack headItem = getItemBySlot(EquipmentSlot.HEAD);
+                if (!headItem.isEmpty()) {
+                    this.spawnAtLocation(headItem, 0.5F);
+                    setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+
+                    return InteractionResult.SUCCESS;
                 }
             }
             else {
@@ -244,9 +252,40 @@ public class GhostEntity extends AbstractGhostEntity {
         return InteractionResult.PASS;
     }
 
+    public static boolean isHeadMushroomItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return stack.is(GhostsTags.GHOST_HEAD_MUSHROOMS);
+    }
+
+    public static boolean isBrownHeadMushroom(ItemStack stack) {
+        return stack.is(Items.BROWN_MUSHROOM);
+    }
+
+    public static boolean isRedHeadMushroom(ItemStack stack) {
+        return isHeadMushroomItem(stack) && !isBrownHeadMushroom(stack);
+    }
+
+    private boolean isHeadEquipment(ItemStack stack) {
+        return !stack.isEmpty() && getEquipmentSlotForItem(stack) == EquipmentSlot.HEAD;
+    }
+
+    private void equipHeadItem(Player player, ItemStack stack) {
+        ItemStack currentHead = getItemBySlot(EquipmentSlot.HEAD);
+        if (!currentHead.isEmpty()) {
+            this.spawnAtLocation(currentHead, 0.5F);
+            setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        }
+
+        ItemStack copy = stack.copy();
+        copy.setCount(1);
+        setItemSlotAndDropWhenKilled(EquipmentSlot.HEAD, copy);
+
+        if (!player.getAbilities().instabuild) stack.shrink(1);
+    }
+
     @Override
-    public int getExperienceReward() {
-        return 1 + level().random.nextInt(2, 4);
+    protected int getBaseExperienceReward(ServerLevel serverLevel) {
+        return 1 + serverLevel.getRandom().nextInt(2, 4);
     }
 
     @Override
@@ -254,7 +293,7 @@ public class GhostEntity extends AbstractGhostEntity {
         super.tick();
         this.setNoGravity(true);
 
-        if (level().isClientSide)
+        if (level().isClientSide())
             return;
 
         rotateBody();
@@ -313,28 +352,19 @@ public class GhostEntity extends AbstractGhostEntity {
         if (level() instanceof ServerLevel level)
             ExperienceOrb.award(level, this.getPosition(0), getExperienceFromItem(itemstack));
 
-        if (!itemstack.getEnchantmentTags().isEmpty()) {
-            int i = random.nextInt(itemstack.getEnchantmentTags().size());
-
-            itemstack.getEnchantmentTags().remove(i);
-        }
-
-        itemstack.removeTagKey("StoredEnchantments");
-
-        itemstack.setRepairCost(AnvilMenu.calculateIncreasedRepairCost(itemstack.getBaseRepairCost()));
+        itemstack.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        itemstack.remove(DataComponents.STORED_ENCHANTMENTS);
+        itemstack.remove(DataComponents.REPAIR_COST);
 
         return itemstack.copy();
     }
 
-    private int getExperienceFromItem(ItemStack p_39637_) {
+    private int getExperienceFromItem(ItemStack stack) {
         int l = 0;
-        Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(p_39637_);
-
-        for (Map.Entry<Enchantment, Integer> entry : map.entrySet()) {
-            Enchantment enchantment = entry.getKey();
-            Integer integer = entry.getValue();
-            if (!enchantment.isCurse()) {
-                l += enchantment.getMinCost(integer);
+        for (Object2IntMap.Entry<Holder<Enchantment>> entry : stack.getEnchantments().entrySet()) {
+            Holder<Enchantment> enchantment = entry.getKey();
+            if (!enchantment.is(EnchantmentTags.CURSE)) {
+                l += enchantment.value().getMinCost(entry.getIntValue());
             }
         }
 
@@ -342,11 +372,14 @@ public class GhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains("CdUnenchant")) {
-            this.setCdUnenchant(compound.getInt("CdUnenchant"));
-        }
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.getInt("CdUnenchant").ifPresent(this::setCdUnenchant);
+        input.read("HeadCosmetic", ItemStack.OPTIONAL_CODEC).ifPresent(stack -> {
+            if (!stack.isEmpty() && getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+                setItemSlotAndDropWhenKilled(EquipmentSlot.HEAD, stack);
+            }
+        });
     }
 
     @Nullable
@@ -368,54 +401,54 @@ public class GhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, MobSpawnType mobSpawnType, @Nullable SpawnGroupData spawnGroupData, @Nullable CompoundTag compoundTag) {
-        return super.finalizeSpawn(levelAccessor, difficulty, mobSpawnType, spawnGroupData, compoundTag);
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, EntitySpawnReason mobSpawnType, @Nullable SpawnGroupData spawnGroupData) {
+        return super.finalizeSpawn(levelAccessor, difficulty, mobSpawnType, spawnGroupData);
     }
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-        registrar.add(new AnimationController<>(this, "bodyController", 4, this::bodyAC));
-        registrar.add(new AnimationController<>(this, "armsController", 4, this::armsAC));
-        registrar.add(new AnimationController<>(this, "blinkController", 2, this::blinkAC));
-        registrar.add(new AnimationController<>(this, "torch_place_controller", 2, state -> PlayState.STOP).triggerableAnim("torch_place", RawAnimation.begin().thenPlay("torch_place")));
+        registrar.add(new AnimationController<>("bodyController", 4, this::bodyAC));
+        registrar.add(new AnimationController<>("armsController", 4, this::armsAC));
+        registrar.add(new AnimationController<>("blinkController", 2, this::blinkAC));
+        registrar.add(new AnimationController<GhostEntity>("torch_place_controller", 2, state -> PlayState.STOP).triggerableAnim("torch_place", RawAnimation.begin().thenPlay("torch_place")));
     }
 
-    private <E extends GeoAnimatable> PlayState bodyAC(AnimationState<E> event) {
+    private PlayState bodyAC(AnimationTest<GhostEntity> event) {
         if (event.isMoving()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_move"));
+            event.setAnimation(RawAnimation.begin().thenPlay("ghost_move"));
         }
         else if (isInSittingPose()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_sitting"));
+            event.setAnimation(RawAnimation.begin().thenPlay("ghost_sitting"));
         }
         else {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_idle"));
+            event.setAnimation(RawAnimation.begin().thenPlay("ghost_idle"));
         }
 
         return PlayState.CONTINUE;
     }
 
-    private <E extends GeoAnimatable> PlayState blinkAC(AnimationState<E> event) {
+    private PlayState blinkAC(AnimationTest<GhostEntity> event) {
         if (getBlinkCd() == 0) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_blink"));
+            event.setAnimation(RawAnimation.begin().thenPlay("ghost_blink"));
         }
 
         return PlayState.CONTINUE;
     }
 
-    private <E extends GeoAnimatable> PlayState armsAC(AnimationState<E> event) {
+    private PlayState armsAC(AnimationTest<GhostEntity> event) {
         boolean hasItem = !getHoldItem().isEmpty();
         if (hasItem) {
             if (this.shouldUnechant()) {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_unenchant"));
+                event.setAnimation(RawAnimation.begin().thenPlay("ghost_unenchant"));
             } else {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("ghost_arms_hold"));
+                event.setAnimation(RawAnimation.begin().thenLoop("ghost_arms_hold"));
             }
 
         } else {
             if (isInSittingPose()) {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("ghost_idle_arms"));
+                event.setAnimation(RawAnimation.begin().thenLoop("ghost_idle_arms"));
             } else {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop(event.isMoving() ? "ghost_move_arms" : "ghost_idle_arms"));
+                event.setAnimation(RawAnimation.begin().thenLoop(event.isMoving() ? "ghost_move_arms" : "ghost_idle_arms"));
             }
 
         }

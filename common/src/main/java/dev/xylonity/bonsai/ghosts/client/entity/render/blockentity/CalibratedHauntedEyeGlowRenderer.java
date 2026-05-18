@@ -15,25 +15,25 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 public class CalibratedHauntedEyeGlowRenderer implements BlockEntityRenderer<CalibratedHauntedEyeBlockEntity> {
 
-    private static final ResourceLocation GLOW_OFF = Ghosts.of("block/calibrated_haunted_eye_front_glow");
-    private static final ResourceLocation GLOW_ON = Ghosts.of("block/calibrated_haunted_eye_front_on_glow");
+    private static final Identifier GLOW_OFF = Ghosts.of("block/calibrated_haunted_eye_front_glow");
+    private static final Identifier GLOW_ON = Ghosts.of("block/calibrated_haunted_eye_front_on_glow");
 
     public CalibratedHauntedEyeGlowRenderer(BlockEntityRendererProvider.Context context) {
         ;;
     }
 
     @Override
-    public void render(CalibratedHauntedEyeBlockEntity blockEntity, float partialTicks, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource buffers, int packedLight, int packedOverlay) {
+    public void render(CalibratedHauntedEyeBlockEntity blockEntity, float partialTicks, @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffers, int packedLight, int packedOverlay) {
         BlockState state = blockEntity.getBlockState();
         if (!(state.getBlock() instanceof CalibratedHauntedEyeBlock)) {
             return;
@@ -51,7 +51,7 @@ public class CalibratedHauntedEyeGlowRenderer implements BlockEntityRenderer<Cal
     }
 
     private void renderFrontGlow(PoseStack poseStack, MultiBufferSource buffers, int power, Direction frontDirection) {
-        ResourceLocation texture = (power > 0) ? GLOW_ON : GLOW_OFF;
+        Identifier texture = (power > 0) ? GLOW_ON : GLOW_OFF;
         TextureAtlasSprite sprite = Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
                 .apply(texture);
@@ -116,7 +116,7 @@ public class CalibratedHauntedEyeGlowRenderer implements BlockEntityRenderer<Cal
     }
 
     private void renderTopGlow(PoseStack poseStack, MultiBufferSource buffers, int power, Direction frontDirection) {
-        ResourceLocation texture;
+        Identifier texture;
         if (power <= 4) {
             texture = Ghosts.of("block/calibrated_haunted_eye_top_2_glow");
         }

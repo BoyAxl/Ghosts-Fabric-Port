@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 
 public class SmallGhostPlantSaplingGoal extends Goal {
@@ -38,7 +38,7 @@ public class SmallGhostPlantSaplingGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getIsSleeping()) {
@@ -68,7 +68,7 @@ public class SmallGhostPlantSaplingGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        if (ghost.level().isClientSide) {
+        if (ghost.level().isClientSide()) {
             return false;
         }
         if (ghost.getIsSleeping()) {

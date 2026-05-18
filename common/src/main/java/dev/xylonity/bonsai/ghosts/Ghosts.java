@@ -3,7 +3,7 @@ package dev.xylonity.bonsai.ghosts;
 import dev.xylonity.bonsai.ghosts.platform.GhostsPlatform;
 import dev.xylonity.bonsai.ghosts.registry.*;
 import dev.xylonity.bonsai.ghosts.tag.GhostsWoodTypes;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +29,8 @@ public class Ghosts {
         GhostsFoliagePlacers.init();
     }
 
-    public static ResourceLocation of(String path) {
-        return new ResourceLocation(MOD_ID, path);
+    public static Identifier of(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 
 }

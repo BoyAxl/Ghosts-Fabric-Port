@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "wooden_fence",
+  "key": {
+    "#": "ghosts:haunted_planks",
+    "X": "minecraft:stick"
+  },
+  "pattern": [
+    "#X#",
+    "#X#"
+  ],
+  "result": {
+    "count": 3,
+    "id": "ghosts:haunted_fence"
+  }
+}

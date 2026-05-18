@@ -11,7 +11,6 @@ import dev.xylonity.bonsai.ghosts.registry.GhostsSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -24,7 +23,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -35,23 +34,24 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.util.AirRandomPos;
-import net.minecraft.world.entity.animal.AbstractGolem;
+import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.pathfinder.BlockPathTypes;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.state.AnimationTest;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class SmallGhostEntity extends AbstractGhostEntity {
     private static final EntityDataAccessor<Integer> DATA_ID_TYPE_VARIANT = SynchedEntityData.defineId(SmallGhostEntity.class, EntityDataSerializers.INT);
@@ -62,12 +62,11 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     public SmallGhostEntity(EntityType<? extends TamableAnimal> entity, Level world) {
         super(entity, world);
 
-        this.setPathfindingMalus(BlockPathTypes.POWDER_SNOW, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.DANGER_POWDER_SNOW, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.LAVA, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.BLOCKED, -1.0F);
-        this.setPathfindingMalus(BlockPathTypes.LEAVES, -1.0F);
+        this.setPathfindingMalus(PathType.POWDER_SNOW, -1.0F);
+        this.setPathfindingMalus(PathType.LAVA, -1.0F);
+        this.setPathfindingMalus(PathType.WATER, -1.0F);
+        this.setPathfindingMalus(PathType.BLOCKED, -1.0F);
+        this.setPathfindingMalus(PathType.LEAVES, -1.0F);
 
         this.moveControl = new GhostMoveControl(this);
     }
@@ -99,7 +98,6 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
         navigator.setCanOpenDoors(false);
         navigator.setCanFloat(true);
-        navigator.setCanPassDoors(true);
 
         return navigator;
     }
@@ -113,18 +111,18 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+    public boolean causeFallDamage(double fallDistance, float multiplier, DamageSource source) {
         return false;
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
 
-        this.entityData.define(IS_STAYING, false);
-        this.entityData.define(IS_SLEEPING, false);
-        this.entityData.define(DATA_ID_TYPE_VARIANT, 0);
-        this.entityData.define(CD_FULL_HIDE, 0);
+        builder.define(IS_STAYING, false);
+        builder.define(IS_SLEEPING, false);
+        builder.define(DATA_ID_TYPE_VARIANT, 0);
+        builder.define(CD_FULL_HIDE, 0);
     }
 
     public void setIsStaying(boolean isStaying) {
@@ -176,17 +174,17 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compoundTag) {
-        super.addAdditionalSaveData(compoundTag);
-        compoundTag.putInt("Variant", getVariant().getId());
-        compoundTag.putInt("CdFullHide", getCdFullHide());
-        compoundTag.putBoolean("IsStaying", getIsStaying());
-        compoundTag.putBoolean("IsSleeping", getIsSleeping());
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        output.putInt("Variant", getVariant().getId());
+        output.putInt("CdFullHide", getCdFullHide());
+        output.putBoolean("IsStaying", getIsStaying());
+        output.putBoolean("IsSleeping", getIsSleeping());
     }
 
     @Override
-    public int getExperienceReward() {
-        return 1 + level().random.nextInt(2, 4);
+    protected int getBaseExperienceReward(ServerLevel serverLevel) {
+        return 1 + serverLevel.getRandom().nextInt(2, 4);
     }
 
     @Override
@@ -220,7 +218,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
         super.tick();
         this.setNoGravity(true);
 
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             return;
         }
 
@@ -258,7 +256,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
             if (getHoldItem().isEmpty()) {
                 BlockState belowBlockState = level().getBlockState(this.blockPosition().below());
-                if (!level().isDay() && (belowBlockState.is(Blocks.GRASS_BLOCK) || belowBlockState.is(Blocks.DIRT))) {
+                if (!isDayTime() && (belowBlockState.is(Blocks.GRASS_BLOCK) || belowBlockState.is(Blocks.DIRT))) {
                     if (!getIsSleeping()) {
                         setCdFullHide(36);
                     }
@@ -300,6 +298,10 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
     }
 
+    private boolean isDayTime() {
+        return level().isBrightOutside();
+    }
+
     private void moveToPos(Vec3 target, double speed, float lerp) {
         Vec3 tetha = target.subtract(this.position());
         if (tetha.length() < 1.0E-3) return;
@@ -312,7 +314,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float p) {
+    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float p) {
         if (source.getEntity() != null) {
             Vec3 vec = AirRandomPos.getPosTowards(this, 32, 32, 32, new Vec3(32, 32, 32), 32);
             if (vec != null) {
@@ -321,27 +323,16 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
         }
 
-        return super.hurt(source, p);
+        return super.hurtServer(serverLevel, source, p);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compoundTag) {
-        super.readAdditionalSaveData(compoundTag);
-        if (compoundTag.contains("Variant")) {
-            this.setVariant(compoundTag.getInt("Variant"));
-        }
-        if (compoundTag.contains("CdFullHide")) {
-            this.setCdFullHide(compoundTag.getInt("CdFullHide"));
-        }
-        if (compoundTag.contains("IsStaying")) {
-            this.setIsStaying(compoundTag.getBoolean("IsStaying"));
-        }
-        if (compoundTag.contains("IsSleeping")) {
-            this.setIsSleeping(compoundTag.getBoolean("IsSleeping"));
-        }
-        else if (compoundTag.contains("IsHiding")) {
-            this.setIsSleeping(compoundTag.getBoolean("IsHiding"));
-        }
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        input.getInt("Variant").ifPresent(this::setVariant);
+        input.getInt("CdFullHide").ifPresent(this::setCdFullHide);
+        this.setIsStaying(input.getBooleanOr("IsStaying", getIsStaying()));
+        this.setIsSleeping(input.getBooleanOr("IsSleeping", input.getBooleanOr("IsHiding", getIsSleeping())));
 
     }
 
@@ -364,41 +355,41 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, MobSpawnType mobSpawnType, @Nullable SpawnGroupData spawnGroupData, @Nullable CompoundTag compoundTag) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, EntitySpawnReason mobSpawnType, @Nullable SpawnGroupData spawnGroupData) {
         setVariant(levelAccessor.getRandom().nextBoolean() ? SmallGhostVariant.PLANT : SmallGhostVariant.NORMAL);
-        return super.finalizeSpawn(levelAccessor, difficulty, mobSpawnType, spawnGroupData, compoundTag);
+        return super.finalizeSpawn(levelAccessor, difficulty, mobSpawnType, spawnGroupData);
     }
 
-    private <E extends GeoAnimatable> PlayState bodyAC(AnimationState<E> event) {
+    private PlayState bodyAC(AnimationTest<SmallGhostEntity> event) {
         if (event.isMoving() && !getIsSleeping()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("ghost_move"));
+            event.setAnimation(RawAnimation.begin().thenLoop("ghost_move"));
             return PlayState.CONTINUE;
         }
 
         if (getIsSleeping()) {
             if (getCdFullHide() > 0) {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("ghost_bury"));
+                event.setAnimation(RawAnimation.begin().thenPlay("ghost_bury"));
             }
             else {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("mini_ghost_buried"));
+                event.setAnimation(RawAnimation.begin().thenPlay("mini_ghost_buried"));
             }
 
             return PlayState.CONTINUE;
         }
 
         if (!getIsSleeping() && !event.isMoving()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("ghost_idle"));
+            event.setAnimation(RawAnimation.begin().thenLoop("ghost_idle"));
         }
 
         return PlayState.CONTINUE;
     }
 
-    private <E extends GeoAnimatable> PlayState armsAC(AnimationState<E> event) {
+    private PlayState armsAC(AnimationTest<SmallGhostEntity> event) {
         if (!getHoldItem().isEmpty()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("mini_ghost_arms_hold"));
+            event.setAnimation(RawAnimation.begin().thenLoop("mini_ghost_arms_hold"));
         }
         else {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop(event.isMoving() ? "ghost_move_arms" : "ghost_idle_arms"));
+            event.setAnimation(RawAnimation.begin().thenLoop(event.isMoving() ? "ghost_move_arms" : "ghost_idle_arms"));
         }
 
         return PlayState.CONTINUE;
@@ -406,8 +397,8 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-        registrar.add(new AnimationController<>(this, "small_ghost_animation_controller_body", 1, this::bodyAC));
-        registrar.add(new AnimationController<>(this, "small_ghost_animation_controller_arms", 1, this::armsAC));
+        registrar.add(new AnimationController<>("small_ghost_animation_controller_body", 1, this::bodyAC));
+        registrar.add(new AnimationController<>("small_ghost_animation_controller_arms", 1, this::armsAC));
     }
 
 }

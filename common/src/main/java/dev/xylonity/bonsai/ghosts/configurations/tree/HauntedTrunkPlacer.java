@@ -1,14 +1,14 @@
 package dev.xylonity.bonsai.ghosts.configurations.tree;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.xylonity.bonsai.ghosts.registry.GhostsBlocks;
 import dev.xylonity.bonsai.ghosts.registry.GhostsTrunkPlacerTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.LevelSimulatedReader;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.feature.configurations.TreeConfiguration;
@@ -16,13 +16,13 @@ import net.minecraft.world.level.levelgen.feature.foliageplacers.FoliagePlacer;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.StraightTrunkPlacer;
 import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 public class HauntedTrunkPlacer extends StraightTrunkPlacer {
 
-    public static final Codec<HauntedTrunkPlacer> CODEC = RecordCodecBuilder.create((instance) -> trunkPlacerParts(instance).apply(instance, HauntedTrunkPlacer::new));
+    public static final MapCodec<HauntedTrunkPlacer> CODEC = RecordCodecBuilder.mapCodec((instance) -> trunkPlacerParts(instance).apply(instance, HauntedTrunkPlacer::new));
 
     private boolean hasSpawnedEye;
 
@@ -32,14 +32,14 @@ public class HauntedTrunkPlacer extends StraightTrunkPlacer {
     }
 
     @Override
-    protected @Nonnull TrunkPlacerType<?> type() {
+    protected @NotNull TrunkPlacerType<?> type() {
         return GhostsTrunkPlacerTypes.HAUNTED_TRUNK_PLACER.get();
     }
 
     @Override
-    public @Nonnull List<FoliagePlacer.FoliageAttachment> placeTrunk(@Nonnull LevelSimulatedReader level, @Nonnull BiConsumer<BlockPos, BlockState> blockSetter, @Nonnull RandomSource random, int freeTreeHeight, BlockPos pos, @Nonnull TreeConfiguration config) {
+    public @NotNull List<FoliagePlacer.FoliageAttachment> placeTrunk(@NotNull WorldGenLevel level, @NotNull BiConsumer<BlockPos, BlockState> blockSetter, @NotNull RandomSource random, int freeTreeHeight, BlockPos pos, @NotNull TreeConfiguration config) {
         this.hasSpawnedEye = false;
-        setDirtAt(level, blockSetter, random, pos.below(), config);
+        placeBelowTrunkBlock(level, blockSetter, random, pos.below(), config);
 
         for (int i = 0; i < freeTreeHeight; ++i) {
             final BlockPos currentPosition = pos.above(i);

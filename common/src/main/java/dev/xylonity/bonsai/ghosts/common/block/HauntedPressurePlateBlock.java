@@ -5,8 +5,8 @@ import net.minecraft.world.level.block.state.properties.BlockSetType;
 
 public class HauntedPressurePlateBlock extends PressurePlateBlock {
 
-    public HauntedPressurePlateBlock(Sensitivity sensitivity, Properties properties, BlockSetType type) {
-        super(sensitivity, properties, type);
+    public HauntedPressurePlateBlock(Properties properties, BlockSetType type) {
+        super(type, properties);
     }
 
 }

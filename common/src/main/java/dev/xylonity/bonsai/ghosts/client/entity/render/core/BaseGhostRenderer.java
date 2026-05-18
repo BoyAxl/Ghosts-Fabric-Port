@@ -1,67 +1,30 @@
 package dev.xylonity.bonsai.ghosts.client.entity.render.core;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import com.geckolib.animatable.GeoEntity;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.GeoEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.util.RenderUtils;
 
-import javax.annotation.Nullable;
-
-public class BaseGhostRenderer<T extends LivingEntity & GeoEntity> extends GeoEntityRenderer<T> {
+public class BaseGhostRenderer<T extends LivingEntity & GeoEntity> extends GeoEntityRenderer<T, EntityRenderState> {
 
     protected BaseGhostRenderer(EntityRendererProvider.Context context, GeoModel<T> modelProvider) {
         super(context, modelProvider);
     }
 
     @Override
-    public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        ItemStack stack = animatable.getItemBySlot(EquipmentSlot.MAINHAND);
-
-        // If the item in hand isn't empty ('item' bone is a dummy anchor)
-        if (!stack.isEmpty() && bone.getName().equals("item")) {
-            poseStack.pushPose();
-            this.moveToBone(poseStack, bone);
-
-            poseStack.scale(0.6F, 0.6F, 0.6F);
-
-            // Corrected direction (frontal)
-            poseStack.mulPose(Axis.YP.rotationDegrees(180));
-
-            // Item cast
-            Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND, packedLight, packedOverlay, poseStack, bufferSource, animatable.level(), 0);
-
-            poseStack.popPose();
-
-            // Important to reassign the buffer as renderStatic uses its own buffers and it's needed to align the consumer to the actual rendertype
-            buffer = bufferSource.getBuffer(renderType);
-        }
-
-        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+    public RenderType getRenderType(EntityRenderState renderState, Identifier texture) {
+        return RenderTypes.entityTranslucent(texture);
     }
 
     @Override
-    public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-        return RenderType.entityTranslucent(texture);
-    }
-
-    protected void moveToBone(PoseStack poseStack, GeoBone bone) {
-        poseStack.translate(-bone.getPosX() / 16, bone.getPosY() / 16, bone.getPosZ() / 16);
-        RenderUtils.rotateMatrixAroundBone(poseStack, bone);
-        poseStack.translate(bone.getPivotX() / 16, bone.getPivotY() / 16, bone.getPivotZ() / 16);
+    public int getRenderColor(T animatable, Void relatedObject, float partialTick) {
+        int alpha = Math.round(0.65f * 255.0f);
+        return (alpha << 24) | 0xFFFFFF;
     }
 
 }
