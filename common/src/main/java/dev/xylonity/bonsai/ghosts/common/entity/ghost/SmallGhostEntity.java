@@ -5,7 +5,6 @@ import dev.xylonity.bonsai.ghosts.common.entity.ai.control.GhostMoveControl;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.generic.GhostWanderGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostPickupSaplingGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostPlantSaplingGoal;
-import dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost.SmallGhostTakeSaplingBlockGoal;
 import dev.xylonity.bonsai.ghosts.common.entity.variant.SmallGhostVariant;
 import dev.xylonity.bonsai.ghosts.registry.GhostsSounds;
 import net.minecraft.core.BlockPos;
@@ -75,7 +74,6 @@ public class SmallGhostEntity extends AbstractGhostEntity {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
         this.goalSelector.addGoal(2, new SmallGhostPlantSaplingGoal(this, 0.43D, 60, 8));
-        this.goalSelector.addGoal(3, new SmallGhostTakeSaplingBlockGoal(this, 10, 0.43D, 0.1f));
         this.goalSelector.addGoal(4, new SmallGhostPickupSaplingGoal(this, 0.43D, 0.1f, 10));
 
         this.goalSelector.addGoal(9, new GhostWanderGoal(this, 0.43f) {
