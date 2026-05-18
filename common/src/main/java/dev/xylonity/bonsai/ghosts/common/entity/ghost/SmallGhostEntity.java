@@ -74,7 +74,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
-        this.goalSelector.addGoal(2, new SmallGhostPlantSaplingGoal(this, 0.43D, 0.1f, 60, 8));
+        this.goalSelector.addGoal(2, new SmallGhostPlantSaplingGoal(this, 0.43D, 60, 8));
         this.goalSelector.addGoal(3, new SmallGhostTakeSaplingBlockGoal(this, 10, 0.43D, 0.1f));
         this.goalSelector.addGoal(4, new SmallGhostPickupSaplingGoal(this, 0.43D, 0.1f, 10));
 

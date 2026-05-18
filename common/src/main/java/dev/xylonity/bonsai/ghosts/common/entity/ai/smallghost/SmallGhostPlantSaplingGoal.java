@@ -2,12 +2,13 @@ package dev.xylonity.bonsai.ghosts.common.entity.ai.smallghost;
 
 import dev.xylonity.bonsai.ghosts.common.entity.ghost.SmallGhostEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -18,19 +19,18 @@ public class SmallGhostPlantSaplingGoal extends Goal {
 
     private final SmallGhostEntity ghost;
     private final double speed;
-    private final float lerp;
     private final int retryCooldown;
     private final int searchRadius;
 
     private int nextTryTick;
+    private int lastRepathTick;
 
     @Nullable
     private BlockPos targetPlacePos;
 
-    public SmallGhostPlantSaplingGoal(SmallGhostEntity ghost, double speed, float lerp, int retryCooldown, int searchRadius) {
+    public SmallGhostPlantSaplingGoal(SmallGhostEntity ghost, double speed, int retryCooldown, int searchRadius) {
         this.ghost = ghost;
         this.speed = speed;
-        this.lerp = lerp;
         this.retryCooldown = Math.max(10, retryCooldown);
         this.searchRadius = Math.max(2, searchRadius);
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
@@ -89,6 +89,7 @@ public class SmallGhostPlantSaplingGoal extends Goal {
     @Override
     public void start() {
         ghost.noPhysics = false;
+        lastRepathTick = ghost.tickCount;
 
         if (ghost.getIsSleeping()) {
             ghost.setIsSleeping(false);
@@ -97,10 +98,12 @@ public class SmallGhostPlantSaplingGoal extends Goal {
             ghost.setCdFullHide(0);
         }
 
+        moveToTarget();
     }
 
     @Override
     public void stop() {
+        ghost.getNavigation().stop();
         targetPlacePos = null;
 
         int desired = ghost.tickCount + retryCooldown;
@@ -141,6 +144,9 @@ public class SmallGhostPlantSaplingGoal extends Goal {
         double placeDistSqr = 1.45D * 1.45D;
         if (ghost.position().distanceToSqr(center) <= placeDistSqr) {
             ghost.level().setBlock(targetPlacePos, blockItem.getBlock().defaultBlockState(), 3);
+            BlockState placedState = ghost.level().getBlockState(targetPlacePos);
+            SoundType soundType = placedState.getSoundType();
+            ghost.level().playSound(null, targetPlacePos, soundType.getPlaceSound(), SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
             held.shrink(1);
             if (held.isEmpty()) {
                 ghost.setHoldItem(ItemStack.EMPTY);
@@ -150,28 +156,21 @@ public class SmallGhostPlantSaplingGoal extends Goal {
             return;
         }
 
-        steerSmooth(center);
+        int ticksPerRepath = 12;
+        if (ghost.tickCount - lastRepathTick >= ticksPerRepath) {
+            lastRepathTick = ghost.tickCount;
+            moveToTarget();
+        }
+
     }
 
-    private void steerSmooth(Vec3 target) {
-        Vec3 delta = target.subtract(ghost.position());
-        double distance = delta.length();
-        if (distance < 1.0E-3) {
+    private void moveToTarget() {
+        if (targetPlacePos == null) {
             return;
         }
 
-        double slowRadius = 2.2D;
-        double speed = this.speed * Mth.clamp(distance / slowRadius, 0.15D, 1.0D);
-
-        Vec3 velocity = delta.scale(speed / distance);
-        Vec3 currentVelocity = ghost.getDeltaMovement();
-
-        ghost.setDeltaMovement(
-                Mth.lerp(lerp, currentVelocity.x, velocity.x),
-                Mth.lerp(lerp, currentVelocity.y, velocity.y),
-                Mth.lerp(lerp, currentVelocity.z, velocity.z)
-        );
-
+        Vec3 movePos = Vec3.atCenterOf(targetPlacePos).add(0.0D, 0.1D, 0.0D);
+        ghost.getNavigation().moveTo(movePos.x, movePos.y, movePos.z, speed);
     }
 
     private boolean isSaplingBlockItem(ItemStack stack) {
