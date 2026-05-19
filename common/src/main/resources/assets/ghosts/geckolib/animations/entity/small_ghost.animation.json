@@ -543,6 +543,21 @@
 						"vector": [1, 1, 1]
 					}
 				},
+				"plant": {
+					"position": {
+						"0.0": {
+							"vector": [0, -0.1, 0]
+						},
+						"0.48": {
+							"vector": [0, 0.1, 0],
+							"easing": "easeInOutSine"
+						},
+						"0.96": {
+							"vector": [0, -0.1, 0],
+							"easing": "easeInOutSine"
+						}
+					}
+				},
 				"plant_2": {
 					"rotation": {
 						"vector": [0, 0, 0]
@@ -550,12 +565,32 @@
 				},
 				"left_leaf": {
 					"rotation": {
-						"vector": [0, 0, 0]
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.48": {
+							"vector": [0, 0, -10],
+							"easing": "easeInOutSine"
+						},
+						"0.96": {
+							"vector": [0, 0, 0],
+							"easing": "easeInOutSine"
+						}
 					}
 				},
 				"right_leaf": {
 					"rotation": {
-						"vector": [0, 0, 0]
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.48": {
+							"vector": [0, 0, 10],
+							"easing": "easeInOutSine"
+						},
+						"0.96": {
+							"vector": [0, 0, 0],
+							"easing": "easeInOutSine"
+						}
 					}
 				}
 			}

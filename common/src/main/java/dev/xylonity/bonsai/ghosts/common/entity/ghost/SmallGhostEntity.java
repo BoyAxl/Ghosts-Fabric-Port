@@ -45,6 +45,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
@@ -55,10 +56,16 @@ import com.geckolib.animation.object.PlayState;
 import org.jetbrains.annotations.Nullable;
 
 public class SmallGhostEntity extends AbstractGhostEntity {
+    private static final int BURROW_HURT_COOLDOWN = 100;
+
     private static final EntityDataAccessor<Integer> DATA_ID_TYPE_VARIANT = SynchedEntityData.defineId(SmallGhostEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> CD_FULL_HIDE = SynchedEntityData.defineId(SmallGhostEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_STAYING = SynchedEntityData.defineId(SmallGhostEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_SLEEPING = SynchedEntityData.defineId(SmallGhostEntity.class, EntityDataSerializers.BOOLEAN);
+
+    @Nullable
+    private BlockPos burrowGroundPos;
+    private int nextBurrowTick;
 
     public SmallGhostEntity(EntityType<? extends TamableAnimal> entity, Level world) {
         super(entity, world);
@@ -76,8 +83,8 @@ public class SmallGhostEntity extends AbstractGhostEntity {
         this.goalSelector.addGoal(1, new FloatGoal(this));
 
         this.goalSelector.addGoal(2, new SmallGhostPlantSaplingGoal(this, 0.43D, 60, 8));
+        this.goalSelector.addGoal(3, new SmallGhostFindBurrowGoal(this, 0.43D, 16, 16));
         this.goalSelector.addGoal(4, new SmallGhostPickupSaplingGoal(this, 0.43D, 0.1f, 10));
-        this.goalSelector.addGoal(5, new SmallGhostFindBurrowGoal(this, 0.43D, 16, 5));
 
         this.goalSelector.addGoal(9, new GhostWanderGoal(this, 0.43f) {
             @Override
@@ -85,8 +92,23 @@ public class SmallGhostEntity extends AbstractGhostEntity {
                 return super.canUse() && !getIsSleeping();
             }
         });
-        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 6.0F));
-        this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 6.0F) {
+            @Override
+            public boolean canUse() {
+                return !getIsSleeping() && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return !getIsSleeping() && super.canContinueToUse();
+            }
+        });
+        this.goalSelector.addGoal(10, new RandomLookAroundGoal(this) {
+            @Override
+            public boolean canUse() {
+                return !getIsSleeping() && super.canUse();
+            }
+        });
     }
 
     protected PathNavigation createNavigation(Level level) {
@@ -224,89 +246,113 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
         }
 
-        if (getIsSleeping() && getCdFullHide() == 36) {
-            BlockPos targetBlock = getBurrowGroundPos();
-
-            if (targetBlock != null && level() instanceof ServerLevel) {
-                this.noPhysics = true;
-                this.setDeltaMovement(Vec3.ZERO);
-
-                this.setPos(getX(), targetBlock.getY() + 1.0 + 0.15 - (this.getBbHeight() / 2.0), getZ());
-            }
-
+        if (getIsSleeping()) {
+            tickBurrowSleep();
+            return;
         }
 
         rotateBody();
+
+        if (!getIsSleeping() && this.noPhysics && this.getDeltaMovement().lengthSqr() < 1.0E-4) {
+            this.noPhysics = false;
+            this.setDeltaMovement(Vec3.ZERO);
+        }
+
+    }
+
+    private void tickBurrowSleep() {
+        BlockPos burrowPos = burrowGroundPos;
+        if (burrowPos == null || !canBurrowAt(burrowPos)) {
+            wakeFromBurrow();
+            return;
+        }
+
+        if (isDayTime()) {
+            wakeFromBurrow();
+            return;
+        }
+
+        keepBurrowedAt(burrowPos);
 
         if (getCdFullHide() > 0) {
             setCdFullHide(getCdFullHide() - 1);
         }
 
-        SmallGhostVariant variant = getVariant();
-        if (variant == SmallGhostVariant.PLANT) {
-
-            if (getHoldItem().isEmpty()) {
-                BlockPos burrowPos = getBurrowGroundPos();
-                if (!isDayTime() && burrowPos != null) {
-                    if (!getIsSleeping()) {
-                        setCdFullHide(36);
-                    }
-
-                    setIsSleeping(true);
-                }
-                else {
-                    wakeFromBurrow();
-                }
-
-            }
-            else {
-                wakeFromBurrow();
-            }
-
+        if (getCdFullHide() == 26) {
+            spawnBurrowParticles(burrowPos);
         }
-
-        if (this.noPhysics && this.getDeltaMovement().lengthSqr() < 1.0E-4) {
-            this.noPhysics = false;
-            this.setDeltaMovement(Vec3.ZERO);
-        }
-
-        if (getIsSleeping() && getCdFullHide() == 26) {
-            BlockPos burrowPos = getBurrowGroundPos();
-
-            if (burrowPos != null && level() instanceof ServerLevel sl) {
-                BlockState belowState = level().getBlockState(burrowPos);
-                for (int i = 0; i < 10; i++) {
-                    double ox = (random.nextDouble() - 0.5) * 0.6;
-                    double oz = (random.nextDouble() - 0.5) * 0.6;
-                    double oy = random.nextDouble() * 0.15;
-                    sl.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, belowState), getX() + ox, getY() + 0.05 + oy, getZ() + oz, 1, 0, 0.02, 0, 0.0);
-                }
-
-                sl.playSound(null, getX(), getY(), getZ(), belowState.getSoundType().getBreakSound(), getSoundSource(), 0.8f, 0.9f + random.nextFloat() * 0.2f);
-            }
-
-        }
-
     }
 
-    @Nullable
-    private BlockPos getBurrowGroundPos() {
-        BlockPos currentPos = this.blockPosition();
-        if (canBurrowAt(currentPos)) {
-            return currentPos;
+    private void keepBurrowedAt(BlockPos burrowPos) {
+        Vec3 center = Vec3.atBottomCenterOf(burrowPos.above());
+
+        this.getNavigation().stop();
+        this.noPhysics = true;
+        this.setDeltaMovement(Vec3.ZERO);
+        this.setPos(center.x, getBurrowedY(burrowPos), center.z);
+    }
+
+    private void spawnBurrowParticles(BlockPos burrowPos) {
+        if (!(level() instanceof ServerLevel sl)) {
+            return;
         }
 
-        BlockPos belowPos = currentPos.below();
-        if (canBurrowAt(belowPos)) {
-            return belowPos;
+        BlockState belowState = level().getBlockState(burrowPos);
+        for (int i = 0; i < 10; i++) {
+            double ox = (random.nextDouble() - 0.5) * 0.6;
+            double oz = (random.nextDouble() - 0.5) * 0.6;
+            double oy = random.nextDouble() * 0.15;
+            sl.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, belowState), getX() + ox, getY() + 0.05 + oy, getZ() + oz, 1, 0, 0.02, 0, 0.0);
         }
 
-        BlockPos abovePos = currentPos.above();
-        return canBurrowAt(abovePos) ? abovePos : null;
+        sl.playSound(null, getX(), getY(), getZ(), belowState.getSoundType().getBreakSound(), getSoundSource(), 0.8f, 0.9f + random.nextFloat() * 0.2f);
     }
 
     private boolean canBurrowAt(BlockPos pos) {
         return isValidBurrowGround(level(), pos);
+    }
+
+    public boolean canUseBurrow(BlockPos pos) {
+        return canBurrowAt(pos) && !isBurrowOccupied(pos);
+    }
+
+    private boolean isBurrowOccupied(BlockPos pos) {
+        return !level().getEntitiesOfClass(SmallGhostEntity.class, new AABB(pos).inflate(0.5D),
+                ghost -> ghost != this && ghost.getIsSleeping() && pos.equals(ghost.burrowGroundPos)).isEmpty();
+    }
+
+    private double getBurrowedY(BlockPos burrowPos) {
+        return burrowPos.getY() + 1.0D + 0.15D - (getBbHeight() / 2.0D);
+    }
+
+    public boolean canStartBurrow() {
+        return !level().isClientSide()
+                && getVariant() == SmallGhostVariant.PLANT
+                && getHoldItem().isEmpty()
+                && !getIsSleeping()
+                && !isDayTime()
+                && tickCount >= nextBurrowTick;
+    }
+
+    public boolean tryStartBurrowAt(BlockPos burrowPos) {
+        if (!canStartBurrow() || !canUseBurrow(burrowPos)) {
+            return false;
+        }
+
+        this.burrowGroundPos = burrowPos.immutable();
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+
+        Vec3 center = Vec3.atBottomCenterOf(burrowGroundPos.above());
+        this.noPhysics = false;
+        this.setPos(center.x, center.y, center.z);
+
+        if (!getIsSleeping()) {
+            setCdFullHide(36);
+        }
+
+        setIsSleeping(true);
+        return true;
     }
 
     private void wakeFromBurrow() {
@@ -314,14 +360,16 @@ public class SmallGhostEntity extends AbstractGhostEntity {
             return;
         }
 
-        BlockPos burrowPos = getBurrowGroundPos();
+        BlockPos burrowPos = burrowGroundPos;
         if (burrowPos != null) {
+            Vec3 center = Vec3.atBottomCenterOf(burrowPos.above());
             this.noPhysics = false;
             this.setDeltaMovement(Vec3.ZERO);
-            this.setPos(getX(), burrowPos.getY() + 1.0D, getZ());
+            this.setPos(center.x, center.y, center.z);
         }
 
         setIsSleeping(false);
+        burrowGroundPos = null;
     }
 
     private boolean isDayTime() {
@@ -333,7 +381,8 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     public static boolean isValidBurrowGround(LevelReader level, BlockPos pos) {
-        return isBurrowGround(level.getBlockState(pos)) && level.getBlockState(pos.above()).isAir();
+        BlockPos abovePos = pos.above();
+        return isBurrowGround(level.getBlockState(pos)) && level.getBlockState(abovePos).getCollisionShape(level, abovePos).isEmpty();
     }
 
     private void moveToPos(Vec3 target, double speed, float lerp) {
@@ -350,6 +399,13 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     @Override
     public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float p) {
         if (source.getEntity() != null) {
+            nextBurrowTick = tickCount + BURROW_HURT_COOLDOWN;
+
+            if (getIsSleeping()) {
+                wakeFromBurrow();
+                setCdFullHide(0);
+            }
+
             Vec3 vec = AirRandomPos.getPosTowards(this, 32, 32, 32, new Vec3(32, 32, 32), 32);
             if (vec != null) {
                 moveToPos(vec, 0.55D, 0.6f);
@@ -405,7 +461,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
                 event.setAnimation(RawAnimation.begin().thenPlay("ghost_bury"));
             }
             else {
-                event.setAnimation(RawAnimation.begin().thenPlay("mini_ghost_buried"));
+                event.setAnimation(RawAnimation.begin().thenLoop("mini_ghost_buried"));
             }
 
             return PlayState.CONTINUE;
