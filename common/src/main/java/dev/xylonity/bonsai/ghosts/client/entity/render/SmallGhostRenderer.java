@@ -1,8 +1,10 @@
 package dev.xylonity.bonsai.ghosts.client.entity.render;
 
+import com.geckolib.animation.state.BoneSnapshot;
+import com.geckolib.cache.model.BakedGeoModel;
+import com.geckolib.cache.model.GeoBone;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.constant.dataticket.DataTicket;
-import com.geckolib.cache.model.GeoBone;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.builtin.BlockAndItemGeoLayer;
@@ -14,10 +16,12 @@ import dev.xylonity.bonsai.ghosts.client.entity.model.SmallGhostModel;
 import dev.xylonity.bonsai.ghosts.client.entity.render.core.BaseGhostRenderer;
 import dev.xylonity.bonsai.ghosts.common.entity.ghost.SmallGhostEntity;
 import dev.xylonity.bonsai.ghosts.common.entity.variant.SmallGhostVariant;
+import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -27,6 +31,10 @@ import java.util.List;
 public class SmallGhostRenderer extends BaseGhostRenderer<SmallGhostEntity> {
 
     private static final DataTicket<SmallGhostVariant> VARIANT = DataTickets.create("ghosts_small_ghost_variant", SmallGhostVariant.class);
+    private static final String MAIN_BONE = "main";
+    private static final String BODY_BONE = "body";
+    private static final String PLANT_BONE = "plant";
+    private static final int FULL_ALPHA = 0xFF000000;
 
     public SmallGhostRenderer(EntityRendererProvider.Context context) {
         super(context, new SmallGhostModel());
@@ -50,6 +58,95 @@ public class SmallGhostRenderer extends BaseGhostRenderer<SmallGhostEntity> {
             boneSnapshots.ifPresent("left_leaf", bone -> bone.skipRender(true));
             boneSnapshots.ifPresent("right_leaf", bone -> bone.skipRender(true));
         }
+    }
+
+    @Override
+    public void submitRenderTasks(RenderPassInfo<EntityRenderState> renderInfo, OrderedSubmitNodeCollector submitNodeCollector, RenderType renderType) {
+        if (renderType == null || renderInfo.getOrDefaultGeckolibData(VARIANT, SmallGhostVariant.NORMAL) != SmallGhostVariant.PLANT) {
+            super.submitRenderTasks(renderInfo, submitNodeCollector, renderType);
+            return;
+        }
+
+        BakedGeoModel model = renderInfo.model();
+        GeoBone mainBone = model.getBone(MAIN_BONE).orElse(null);
+        GeoBone bodyBone = model.getBone(BODY_BONE).orElse(null);
+        GeoBone plantBone = model.getBone(PLANT_BONE).orElse(null);
+
+        if (model.isMissingno() || mainBone == null || bodyBone == null || plantBone == null) {
+            super.submitRenderTasks(renderInfo, submitNodeCollector, renderType);
+            return;
+        }
+
+        int packedLight = renderInfo.packedLight();
+        int packedOverlay = renderInfo.packedOverlay();
+        int renderColor = renderInfo.renderColor();
+        int plantColor = FULL_ALPHA | (renderColor & 0xFFFFFF);
+
+        submitNodeCollector.submitCustomGeometry(renderInfo.poseStack(), renderType, (pose, vertexConsumer) -> {
+            PoseStack poseStack = renderInfo.poseStack();
+            poseStack.pushPose();
+            poseStack.last().set(pose);
+
+            renderInfo.renderPosed(() -> {
+                BoneVisibility plantVisibility = setBranchHidden(plantBone, true);
+
+                try {
+                    model.render(renderInfo, vertexConsumer, packedLight, packedOverlay, renderColor);
+                } finally {
+                    restoreVisibility(plantVisibility);
+                }
+            });
+
+            poseStack.popPose();
+        });
+
+        submitNodeCollector.submitCustomGeometry(renderInfo.poseStack(), renderType, (pose, vertexConsumer) -> {
+            PoseStack poseStack = renderInfo.poseStack();
+            poseStack.pushPose();
+            poseStack.last().set(pose);
+
+            renderInfo.renderPosed(() -> {
+                BoneVisibility bodyVisibility = setBranchHidden(bodyBone, true);
+                BoneVisibility plantVisibility = setBranchHidden(plantBone, false);
+
+                try {
+                    mainBone.positionAndRender(renderInfo, vertexConsumer, packedLight, packedOverlay, plantColor);
+                } finally {
+                    restoreVisibility(plantVisibility);
+                    restoreVisibility(bodyVisibility);
+                }
+            });
+
+            poseStack.popPose();
+        });
+    }
+
+    private static BoneVisibility setBranchHidden(GeoBone bone, boolean hidden) {
+        BoneSnapshot snapshot = bone.frameSnapshot;
+        boolean hadSnapshot = snapshot != null;
+
+        if (snapshot == null) {
+            snapshot = BoneSnapshot.create(bone);
+            bone.frameSnapshot = snapshot;
+        }
+
+        BoneVisibility visibility = new BoneVisibility(bone, snapshot, hadSnapshot, snapshot.isHidden(), snapshot.areChildrenHidden());
+        snapshot.skipRender(hidden);
+        snapshot.skipChildrenRender(hidden);
+
+        return visibility;
+    }
+
+    private static void restoreVisibility(BoneVisibility visibility) {
+        if (visibility.hadSnapshot()) {
+            visibility.snapshot().skipRender(visibility.hidden());
+            visibility.snapshot().skipChildrenRender(visibility.childrenHidden());
+        } else {
+            visibility.bone().frameSnapshot = null;
+        }
+    }
+
+    private record BoneVisibility(GeoBone bone, BoneSnapshot snapshot, boolean hadSnapshot, boolean hidden, boolean childrenHidden) {
     }
 
     private static class SmallGhostHeldItemLayer extends BlockAndItemGeoLayer<SmallGhostEntity, Void, EntityRenderState> {
