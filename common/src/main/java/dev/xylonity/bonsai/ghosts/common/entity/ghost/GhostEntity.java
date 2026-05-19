@@ -26,6 +26,7 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.ai.util.AirRandomPos;
 import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.phys.Vec3;
 import com.geckolib.animatable.GeoAnimatable;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
@@ -369,6 +371,18 @@ public class GhostEntity extends AbstractGhostEntity {
         }
 
         return l;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {
+        if (source.getEntity() != null) {
+            Vec3 vec = AirRandomPos.getPosTowards(this, 32, 32, 32, new Vec3(32, 32, 32), 32);
+            if (vec != null) {
+                moveToPos(vec, 0.55D, 0.6f);
+            }
+        }
+
+        return super.hurtServer(serverLevel, source, amount);
     }
 
     @Override

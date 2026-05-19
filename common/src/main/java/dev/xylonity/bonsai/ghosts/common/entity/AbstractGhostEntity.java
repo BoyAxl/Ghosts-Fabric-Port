@@ -134,6 +134,17 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
         this.xRotO = pitch;
     }
 
+    protected void moveToPos(Vec3 target, double speed, float lerp) {
+        Vec3 delta = target.subtract(this.position());
+        if (delta.length() < 1.0E-3) return;
+
+        Vec3 velocity = delta.scale(1.0 / delta.length()).scale(speed);
+        Vec3 currentVelocity = this.getDeltaMovement();
+        this.setDeltaMovement(Mth.lerp(lerp, currentVelocity.x, velocity.x), Mth.lerp(lerp, currentVelocity.y, velocity.y), Mth.lerp(lerp, currentVelocity.z, velocity.z));
+
+        this.getLookControl().setLookAt(target.x, target.y, target.z);
+    }
+
     @Override
     public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount) {
         if (source.is(DamageTypes.IN_WALL)) return false;

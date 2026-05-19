@@ -17,7 +17,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -383,17 +382,6 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     public static boolean isValidBurrowGround(LevelReader level, BlockPos pos) {
         BlockPos abovePos = pos.above();
         return isBurrowGround(level.getBlockState(pos)) && level.getBlockState(abovePos).getCollisionShape(level, abovePos).isEmpty();
-    }
-
-    private void moveToPos(Vec3 target, double speed, float lerp) {
-        Vec3 tetha = target.subtract(this.position());
-        if (tetha.length() < 1.0E-3) return;
-
-        Vec3 vel = tetha.scale(1.0 / tetha.length()).scale(speed);
-        Vec3 v = this.getDeltaMovement();
-        this.setDeltaMovement(Mth.lerp(lerp, v.x, vel.x), Mth.lerp(lerp, v.y, vel.y), Mth.lerp(lerp, v.z, vel.z));
-
-        this.getLookControl().setLookAt(target.x, target.y, target.z);
     }
 
     @Override
