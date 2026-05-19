@@ -11,10 +11,10 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 
 public class KodamaGlowLayer extends GeoRenderLayer<KodamaEntity, Void, EntityRenderState> {
 
-    private static final int FULL_BRIGHT = 15728880;
     private static final DataTicket<Float> GLOW_ALPHA = DataTickets.create("ghosts_kodama_glow_alpha", Float.class);
     private static final DataTicket<Identifier> GLOW_TEXTURE = DataTickets.create("ghosts_kodama_glow_texture", Identifier.class);
 
@@ -55,7 +55,7 @@ public class KodamaGlowLayer extends GeoRenderLayer<KodamaEntity, Void, EntityRe
         int glowColor = ((Math.round(alpha * 255.0f) & 255) << 24) | 0xFFFFFF;
 
         renderInfo.renderState().addGeckolibData(DataTickets.RENDER_COLOR, glowColor);
-        renderInfo.renderState().addGeckolibData(DataTickets.PACKED_LIGHT, FULL_BRIGHT);
+        renderInfo.renderState().addGeckolibData(DataTickets.PACKED_LIGHT, LightCoordsUtil.FULL_BRIGHT);
 
         getRenderer().submitRenderTasks(renderInfo, submitNodeCollector.order(1), RenderTypes.entityTranslucentEmissive(texture));
 

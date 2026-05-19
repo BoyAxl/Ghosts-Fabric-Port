@@ -11,10 +11,10 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 
 public class GhostGlowLayer extends GeoRenderLayer<GhostEntity, Void, EntityRenderState> {
 
-    private static final int FULL_BRIGHT = 15728880;
     private static final int GLOW_COLOR = 0xFFFFFFFF;
     private static final Identifier GLOW_TEXTURE = Ghosts.of("textures/entity/ghost_glowmask.png");
 
@@ -33,7 +33,7 @@ public class GhostGlowLayer extends GeoRenderLayer<GhostEntity, Void, EntityRend
         int previousOverlay = renderInfo.packedOverlay();
 
         renderInfo.renderState().addGeckolibData(DataTickets.RENDER_COLOR, GLOW_COLOR);
-        renderInfo.renderState().addGeckolibData(DataTickets.PACKED_LIGHT, FULL_BRIGHT);
+        renderInfo.renderState().addGeckolibData(DataTickets.PACKED_LIGHT, LightCoordsUtil.FULL_BRIGHT);
         renderInfo.renderState().addGeckolibData(DataTickets.PACKED_OVERLAY, OverlayTexture.NO_OVERLAY);
 
         getRenderer().submitRenderTasks(renderInfo, submitNodeCollector.order(1), RenderTypes.entityTranslucentEmissive(GLOW_TEXTURE));

@@ -5,7 +5,6 @@ import dev.xylonity.bonsai.ghosts.common.entity.variant.SmallGhostVariant;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.goal.MoveToBlockGoal;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class SmallGhostFindBurrowGoal extends MoveToBlockGoal {
 
@@ -34,8 +33,7 @@ public class SmallGhostFindBurrowGoal extends MoveToBlockGoal {
 
     @Override
     protected boolean isValidTarget(LevelReader level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        return SmallGhostEntity.isBurrowGround(state) && level.getBlockState(pos.above()).isAir();
+        return SmallGhostEntity.isValidBurrowGround(level, pos);
     }
 
     private boolean wantsToBurrow() {

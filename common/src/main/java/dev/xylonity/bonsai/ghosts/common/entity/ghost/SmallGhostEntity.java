@@ -38,6 +38,7 @@ import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -130,10 +131,6 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
     public void setHoldItem(ItemStack holdItem) {
         this.setItemSlotAndDropWhenKilled(EquipmentSlot.MAINHAND, holdItem);
-    }
-
-    public ItemStack getHoldItem() {
-        return this.getItemBySlot(EquipmentSlot.MAINHAND);
     }
 
     public void setIsSleeping(boolean isSleeping) {
@@ -309,7 +306,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     private boolean canBurrowAt(BlockPos pos) {
-        return isBurrowGround(level().getBlockState(pos)) && level().getBlockState(pos.above()).isAir();
+        return isValidBurrowGround(level(), pos);
     }
 
     private void wakeFromBurrow() {
@@ -333,6 +330,10 @@ public class SmallGhostEntity extends AbstractGhostEntity {
 
     public static boolean isBurrowGround(BlockState state) {
         return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT);
+    }
+
+    public static boolean isValidBurrowGround(LevelReader level, BlockPos pos) {
+        return isBurrowGround(level.getBlockState(pos)) && level.getBlockState(pos.above()).isAir();
     }
 
     private void moveToPos(Vec3 target, double speed, float lerp) {
