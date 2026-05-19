@@ -23,7 +23,7 @@ public class BaseGhostRenderer<T extends LivingEntity & GeoEntity> extends GeoEn
 
     @Override
     public int getRenderColor(T animatable, Void relatedObject, float partialTick) {
-        int alpha = Math.round(0.65f * 255.0f);
+        int alpha = Math.round(0.20f * 255.0f);
         return (alpha << 24) | 0xFFFFFF;
     }
 
