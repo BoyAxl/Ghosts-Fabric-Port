@@ -1,5 +1,6 @@
 package dev.xylonity.bonsai.ghosts.client.entity.render;
 
+import com.geckolib.cache.model.BakedGeoModel;
 import com.geckolib.constant.DataTickets;
 import com.geckolib.constant.dataticket.DataTicket;
 import com.geckolib.cache.model.GeoBone;
@@ -16,10 +17,12 @@ import dev.xylonity.bonsai.ghosts.common.entity.ghost.GhostEntity;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.equipment.EquipmentAsset;
@@ -31,6 +34,14 @@ import java.util.List;
 public class GhostRenderer extends BaseGhostRenderer<GhostEntity> {
 
     private static final DataTicket<ItemStack> HEAD_ITEM = DataTickets.create("ghosts_head_item", ItemStack.class);
+    private static final String MAIN_BONE = "main";
+    private static final String BODY_BONE = "glow_1";
+    private static final String EYES_BONE = "eyes";
+    private static final String RED_MUSHROOM_BONE = "mushroom_red";
+    private static final String BROWN_MUSHROOM_BONE = "mushroom_brown";
+    private static final String ITEM_ANIMATION_BONE = "item_animation";
+    private static final int FULL_ALPHA = 0xFF000000;
+    private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
     public GhostRenderer(EntityRendererProvider.Context context) {
         super(context, new GhostModel());
@@ -51,12 +62,86 @@ public class GhostRenderer extends BaseGhostRenderer<GhostEntity> {
         ItemStack headItem = renderInfo.getOrDefaultGeckolibData(HEAD_ITEM, ItemStack.EMPTY);
 
         if (!GhostEntity.isRedHeadMushroom(headItem)) {
-            boneSnapshots.ifPresent("mushroom_red", bone -> bone.skipRender(true));
+            boneSnapshots.ifPresent(RED_MUSHROOM_BONE, bone -> bone.skipRender(true));
         }
 
         if (!GhostEntity.isBrownHeadMushroom(headItem)) {
-            boneSnapshots.ifPresent("mushroom_brown", bone -> bone.skipRender(true));
+            boneSnapshots.ifPresent(BROWN_MUSHROOM_BONE, bone -> bone.skipRender(true));
         }
+    }
+
+    @Override
+    public void submitRenderTasks(RenderPassInfo<EntityRenderState> renderInfo, OrderedSubmitNodeCollector submitNodeCollector, RenderType renderType) {
+        ItemStack headItem = renderInfo.getOrDefaultGeckolibData(HEAD_ITEM, ItemStack.EMPTY);
+        boolean renderRedMushroom = GhostEntity.isRedHeadMushroom(headItem);
+        boolean renderBrownMushroom = GhostEntity.isBrownHeadMushroom(headItem);
+
+        if (renderType == null || (!renderRedMushroom && !renderBrownMushroom)) {
+            super.submitRenderTasks(renderInfo, submitNodeCollector, renderType);
+            return;
+        }
+
+        BakedGeoModel model = renderInfo.model();
+        GeoBone mainBone = model.getBone(MAIN_BONE).orElse(null);
+        GeoBone bodyBone = model.getBone(BODY_BONE).orElse(null);
+        GeoBone eyesBone = model.getBone(EYES_BONE).orElse(null);
+        GeoBone itemAnimationBone = model.getBone(ITEM_ANIMATION_BONE).orElse(null);
+        GeoBone selectedMushroomBone = model.getBone(renderRedMushroom ? RED_MUSHROOM_BONE : BROWN_MUSHROOM_BONE).orElse(null);
+        GeoBone hiddenMushroomBone = model.getBone(renderRedMushroom ? BROWN_MUSHROOM_BONE : RED_MUSHROOM_BONE).orElse(null);
+
+        if (model.isMissingno() || mainBone == null || bodyBone == null || eyesBone == null || itemAnimationBone == null || selectedMushroomBone == null || hiddenMushroomBone == null) {
+            super.submitRenderTasks(renderInfo, submitNodeCollector, renderType);
+            return;
+        }
+
+        int packedLight = renderInfo.packedLight();
+        int packedOverlay = renderInfo.packedOverlay();
+        int renderColor = renderInfo.renderColor();
+        int accessoryColor = FULL_ALPHA | (renderColor & 0xFFFFFF);
+
+        submitNodeCollector.submitCustomGeometry(renderInfo.poseStack(), renderType, (pose, vertexConsumer) -> {
+            PoseStack poseStack = renderInfo.poseStack();
+            poseStack.pushPose();
+            poseStack.last().set(pose);
+
+            renderInfo.renderPosed(() -> {
+                BoneRenderVisibility mushroomVisibility = BoneRenderVisibility.setBranchHidden(selectedMushroomBone, true);
+
+                try {
+                    model.render(renderInfo, vertexConsumer, packedLight, packedOverlay, renderColor);
+                } finally {
+                    mushroomVisibility.restore();
+                }
+            });
+
+            poseStack.popPose();
+        });
+
+        submitNodeCollector.submitCustomGeometry(renderInfo.poseStack(), renderType, (pose, vertexConsumer) -> {
+            PoseStack poseStack = renderInfo.poseStack();
+            poseStack.pushPose();
+            poseStack.last().set(pose);
+
+            renderInfo.renderPosed(() -> {
+                BoneRenderVisibility bodyVisibility = BoneRenderVisibility.setBranchHidden(bodyBone, true);
+                BoneRenderVisibility eyesVisibility = BoneRenderVisibility.setBranchHidden(eyesBone, true);
+                BoneRenderVisibility itemVisibility = BoneRenderVisibility.setBranchHidden(itemAnimationBone, true);
+                BoneRenderVisibility hiddenMushroomVisibility = BoneRenderVisibility.setBranchHidden(hiddenMushroomBone, true);
+                BoneRenderVisibility selectedMushroomVisibility = BoneRenderVisibility.setBranchHidden(selectedMushroomBone, false);
+
+                try {
+                    mainBone.positionAndRender(renderInfo, vertexConsumer, packedLight, packedOverlay, accessoryColor);
+                } finally {
+                    selectedMushroomVisibility.restore();
+                    hiddenMushroomVisibility.restore();
+                    itemVisibility.restore();
+                    eyesVisibility.restore();
+                    bodyVisibility.restore();
+                }
+            });
+
+            poseStack.popPose();
+        });
     }
 
     private static class GhostHeadArmorLayer extends ItemArmorGeoLayer<GhostEntity, Void, EntityRenderState> {
@@ -75,6 +160,15 @@ public class GhostRenderer extends BaseGhostRenderer<GhostEntity> {
             }
 
             return List.of(RenderData.head("glow_1"));
+        }
+
+        @Override
+        public void submitRenderTask(RenderPassInfo<EntityRenderState> renderInfo, SubmitNodeCollector submitNodeCollector) {
+            int previousColor = renderInfo.renderColor();
+
+            renderInfo.renderState().addGeckolibData(DataTickets.RENDER_COLOR, OPAQUE_WHITE);
+            super.submitRenderTask(renderInfo, submitNodeCollector);
+            renderInfo.renderState().addGeckolibData(DataTickets.RENDER_COLOR, previousColor);
         }
 
         @Override

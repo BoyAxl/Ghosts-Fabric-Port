@@ -1,6 +1,5 @@
 package dev.xylonity.bonsai.ghosts.client.entity.render;
 
-import com.geckolib.animation.state.BoneSnapshot;
 import com.geckolib.cache.model.BakedGeoModel;
 import com.geckolib.cache.model.GeoBone;
 import com.geckolib.constant.DataTickets;
@@ -88,12 +87,12 @@ public class SmallGhostRenderer extends BaseGhostRenderer<SmallGhostEntity> {
             poseStack.last().set(pose);
 
             renderInfo.renderPosed(() -> {
-                BoneVisibility plantVisibility = setBranchHidden(plantBone, true);
+                BoneRenderVisibility plantVisibility = BoneRenderVisibility.setBranchHidden(plantBone, true);
 
                 try {
                     model.render(renderInfo, vertexConsumer, packedLight, packedOverlay, renderColor);
                 } finally {
-                    restoreVisibility(plantVisibility);
+                    plantVisibility.restore();
                 }
             });
 
@@ -106,47 +105,19 @@ public class SmallGhostRenderer extends BaseGhostRenderer<SmallGhostEntity> {
             poseStack.last().set(pose);
 
             renderInfo.renderPosed(() -> {
-                BoneVisibility bodyVisibility = setBranchHidden(bodyBone, true);
-                BoneVisibility plantVisibility = setBranchHidden(plantBone, false);
+                BoneRenderVisibility bodyVisibility = BoneRenderVisibility.setBranchHidden(bodyBone, true);
+                BoneRenderVisibility plantVisibility = BoneRenderVisibility.setBranchHidden(plantBone, false);
 
                 try {
                     mainBone.positionAndRender(renderInfo, vertexConsumer, packedLight, packedOverlay, plantColor);
                 } finally {
-                    restoreVisibility(plantVisibility);
-                    restoreVisibility(bodyVisibility);
+                    plantVisibility.restore();
+                    bodyVisibility.restore();
                 }
             });
 
             poseStack.popPose();
         });
-    }
-
-    private static BoneVisibility setBranchHidden(GeoBone bone, boolean hidden) {
-        BoneSnapshot snapshot = bone.frameSnapshot;
-        boolean hadSnapshot = snapshot != null;
-
-        if (snapshot == null) {
-            snapshot = BoneSnapshot.create(bone);
-            bone.frameSnapshot = snapshot;
-        }
-
-        BoneVisibility visibility = new BoneVisibility(bone, snapshot, hadSnapshot, snapshot.isHidden(), snapshot.areChildrenHidden());
-        snapshot.skipRender(hidden);
-        snapshot.skipChildrenRender(hidden);
-
-        return visibility;
-    }
-
-    private static void restoreVisibility(BoneVisibility visibility) {
-        if (visibility.hadSnapshot()) {
-            visibility.snapshot().skipRender(visibility.hidden());
-            visibility.snapshot().skipChildrenRender(visibility.childrenHidden());
-        } else {
-            visibility.bone().frameSnapshot = null;
-        }
-    }
-
-    private record BoneVisibility(GeoBone bone, BoneSnapshot snapshot, boolean hadSnapshot, boolean hidden, boolean childrenHidden) {
     }
 
     private static class SmallGhostHeldItemLayer extends BlockAndItemGeoLayer<SmallGhostEntity, Void, EntityRenderState> {
