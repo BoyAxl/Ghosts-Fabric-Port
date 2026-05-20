@@ -13,7 +13,6 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
@@ -182,7 +181,7 @@ public abstract class AbstractGhostEntity extends TamableAnimal implements GeoEn
 
     @Override
     public boolean isFood(ItemStack stack) {
-        return stack.is(Items.GLOW_BERRIES);
+        return false;
     }
 
     protected ItemEntity spawnAtLocation(ItemStack stack, float yOffset) {
