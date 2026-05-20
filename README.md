@@ -37,6 +37,7 @@ Huge thanks to the original **Ghosts** creators and contributors:
 - **Xylonity** - maintaining and rewriting the mod
 - **SizableShrimp** - coding
 - **Wanmine** - code assistance
+- **L2** - updated spawn egg sprites
 - **Bonsai Studios / The Ghosts Team** - original project care and direction
 
 This port exists only because their work is already wonderful.
