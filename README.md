@@ -1,6 +1,10 @@
-# 👻 Ghosts Fabric Port
+<h1 align="center">
+  <img src="docs/ghosts-title.png" alt="Ghosts" width="850">
+</h1>
 
-**Unofficial compatibility port** of **Ghosts** for **Minecraft 26.1.2**, **Fabric**, and **Java 25**.
+<p align="center">
+  <strong>Unofficial compatibility port</strong> of <strong>Ghosts</strong> for <strong>Minecraft 26.1.2</strong>, <strong>Fabric</strong>, and <strong>Java 25</strong>.
+</p>
 
 > **This is not an official release from the original Ghosts team.**  
 > All original ideas, code, art, assets, animations, sounds, mobs, blocks, and cozy haunted vibes belong to their creators.
