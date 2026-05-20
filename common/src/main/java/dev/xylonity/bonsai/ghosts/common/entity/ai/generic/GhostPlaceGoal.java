@@ -8,6 +8,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -221,34 +222,7 @@ public class GhostPlaceGoal extends Goal {
     }
 
     private boolean isValidPlacement(Level level, BlockPos placePos, BlockItem blockItem) {
-        if (!level.getBlockState(placePos).isAir()) {
-            return false;
-        }
-
-        if (lastPlacedPos != null) {
-            int dx = Math.abs(placePos.getX() - lastPlacedPos.getX());
-            int dy = Math.abs(placePos.getY() - lastPlacedPos.getY());
-            int dz = Math.abs(placePos.getZ() - lastPlacedPos.getZ());
-            if (dx <= 1 && dy <= 1 && dz <= 1) {
-                return false;
-            }
-
-        }
-
-        if (level.getMaxLocalRawBrightness(placePos) > minLight) {
-            return false;
-        }
-
-        BlockPos basePos = placePos.below();
-        BlockState baseState = level.getBlockState(basePos);
-        if (baseState.isAir()) {
-            return false;
-        }
-        if (!preference.test(baseState)) {
-            return false;
-        }
-
-        return blockItem.getBlock().defaultBlockState().canSurvive(level, placePos);
+        return getValidPlacementState(level, placePos, blockItem) != null;
     }
 
     private boolean placeNow(BlockPos placePos) {
@@ -258,13 +232,14 @@ public class GhostPlaceGoal extends Goal {
         }
 
         BlockItem blockItem = (BlockItem) heldStack.getItem();
-        if (!isValidPlacement(ghost.level(), placePos, blockItem)) {
+        BlockState placementState = getValidPlacementState(ghost.level(), placePos, blockItem);
+        if (placementState == null) {
             return false;
         }
 
         ghost.triggerAnim("torch_place_controller", "torch_place");
 
-        ghost.level().setBlock(placePos, blockItem.getBlock().defaultBlockState(), 3);
+        ghost.level().setBlock(placePos, placementState, 3);
         heldStack.shrink(1);
 
         if (heldStack.isEmpty()) {
@@ -317,33 +292,18 @@ public class GhostPlaceGoal extends Goal {
 
         BlockPos centerPosition = owner.blockPosition();
         int searchRadius = 4;
+        int searchBelow = 3;
+        int searchAbove = blockItem.getBlock().defaultBlockState().hasProperty(LanternBlock.HANGING) ? 4 : 0;
         for (int dx = -searchRadius; dx <= searchRadius; dx++) {
             for (int dz = -searchRadius; dz <= searchRadius; dz++) {
-                int searchRadiusDown = 4;
-                for (int down = 1; down <= searchRadiusDown; down++) {
-                    BlockPos basePos = centerPosition.offset(dx, -down, dz);
-                    BlockState baseState = level.getBlockState(basePos);
-                    if (baseState.isAir()) {
-                        continue;
-                    }
-                    if (!preference.test(baseState)) {
-                        continue;
-                    }
-
-                    BlockPos placePosition = basePos.above();
-                    if (!level.getBlockState(placePosition).isAir()) {
+                for (int dy = -searchBelow; dy <= searchAbove; dy++) {
+                    BlockPos placePosition = centerPosition.offset(dx, dy, dz);
+                    BlockState placementState = getValidPlacementState(level, placePosition, blockItem);
+                    if (placementState == null) {
                         continue;
                     }
 
                     int light = level.getMaxLocalRawBrightness(placePosition);
-                    if (light > minLight) {
-                        continue;
-                    }
-
-                    if (!blockItem.getBlock().defaultBlockState().canSurvive(level, placePosition)) {
-                        continue;
-                    }
-
                     Vec3 toPosition = Vec3.atCenterOf(placePosition).subtract(owner.position());
                     Vec3 toPositionFlat = new Vec3(toPosition.x, 0.0D, toPosition.z);
                     double distanceToPosition = toPositionFlat.length();
@@ -355,6 +315,9 @@ public class GhostPlaceGoal extends Goal {
                     }
 
                     double score = (light * 1000.0D) + (distanceToPosition * 25.0D) + (behindPenalty * 200.0D);
+                    if (isHangingLantern(placementState)) {
+                        score -= 500.0D;
+                    }
 
                     if (score < bestScore) {
                         bestScore = score;
@@ -367,6 +330,58 @@ public class GhostPlaceGoal extends Goal {
         }
 
         return bestPosition;
+    }
+
+    private boolean isHangingLantern(BlockState state) {
+        return state.hasProperty(LanternBlock.HANGING) && state.getValue(LanternBlock.HANGING);
+    }
+
+    @Nullable
+    private BlockState getValidPlacementState(Level level, BlockPos placePos, BlockItem blockItem) {
+        if (!level.getBlockState(placePos).isAir()) {
+            return null;
+        }
+
+        if (lastPlacedPos != null) {
+            int dx = Math.abs(placePos.getX() - lastPlacedPos.getX());
+            int dy = Math.abs(placePos.getY() - lastPlacedPos.getY());
+            int dz = Math.abs(placePos.getZ() - lastPlacedPos.getZ());
+            if (dx <= 1 && dy <= 1 && dz <= 1) {
+                return null;
+            }
+
+        }
+
+        if (level.getMaxLocalRawBrightness(placePos) > minLight) {
+            return null;
+        }
+
+        BlockState defaultState = blockItem.getBlock().defaultBlockState();
+        if (defaultState.hasProperty(LanternBlock.HANGING)) {
+            BlockState hangingState = defaultState.setValue(LanternBlock.HANGING, true);
+            if (hasPreferredSupport(level, placePos.above()) && hangingState.canSurvive(level, placePos)) {
+                return hangingState;
+            }
+
+            BlockState standingState = defaultState.setValue(LanternBlock.HANGING, false);
+            if (hasPreferredSupport(level, placePos.below()) && standingState.canSurvive(level, placePos)) {
+                return standingState;
+            }
+
+            return null;
+        }
+
+        if (!hasPreferredSupport(level, placePos.below())) {
+            return null;
+        }
+
+        return defaultState.canSurvive(level, placePos) ? defaultState : null;
+    }
+
+    private boolean hasPreferredSupport(Level level, BlockPos supportPos) {
+        BlockState supportState = level.getBlockState(supportPos);
+
+        return !supportState.isAir() && preference.test(supportState);
     }
 
 }
