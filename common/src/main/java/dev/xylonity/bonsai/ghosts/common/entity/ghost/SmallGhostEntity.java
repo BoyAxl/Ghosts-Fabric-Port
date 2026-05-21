@@ -260,6 +260,12 @@ public class SmallGhostEntity extends AbstractGhostEntity {
     }
 
     private void tickBurrowSleep() {
+        if (isLeashed()) {
+            wakeFromBurrow();
+            setCdFullHide(0);
+            return;
+        }
+
         BlockPos burrowPos = burrowGroundPos;
         if (burrowPos == null || !canBurrowAt(burrowPos)) {
             wakeFromBurrow();
@@ -330,6 +336,7 @@ public class SmallGhostEntity extends AbstractGhostEntity {
                 && getHoldItem().isEmpty()
                 && !getIsSleeping()
                 && !isDayTime()
+                && !isLeashed()
                 && tickCount >= nextBurrowTick;
     }
 
