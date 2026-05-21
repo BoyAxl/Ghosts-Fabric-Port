@@ -61,6 +61,13 @@ public class GhostFollowOwnerGoal extends Goal {
     }
 
     @Override
+    public void stop() {
+        this.navigation.stop();
+        this.ghost.noPhysics = false;
+        this.owner = null;
+    }
+
+    @Override
     public void tick() {
         if (this.owner == null) return;
 

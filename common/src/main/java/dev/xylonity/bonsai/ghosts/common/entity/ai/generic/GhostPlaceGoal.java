@@ -125,6 +125,7 @@ public class GhostPlaceGoal extends Goal {
     @Override
     public void start() {
         lastRepathTick = ghost.tickCount;
+        ghost.noPhysics = false;
 
         if (targetPlacePos == null) {
             return;
