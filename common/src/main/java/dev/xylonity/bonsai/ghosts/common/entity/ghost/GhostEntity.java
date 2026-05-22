@@ -87,7 +87,16 @@ public class GhostEntity extends AbstractGhostEntity {
     }
 
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new FloatGoal(this) {
+            @Override
+            public boolean canUse() {
+                if (GhostEntity.this.isTame() && GhostEntity.this.isInWater()) {
+                    return false;
+                }
+
+                return super.canUse();
+            }
+        });
         this.goalSelector.addGoal(2, new StayWhenOrderedToGoal(this));
         this.goalSelector.addGoal(3, new GhostApproachHeldGlowBerriesGoal(this, 0.6D, 1.6D, 6.0D, 0.1f, 12));
         this.goalSelector.addGoal(7, new GhostFollowOwnerGoal(this, 0.6D, 3.0F, 7.0F, 0.2f));
@@ -105,6 +114,21 @@ public class GhostEntity extends AbstractGhostEntity {
     @Override
     public boolean fireImmune() {
         return true;
+    }
+
+    @Override
+    public boolean canBreatheUnderwater() {
+        return true;
+    }
+
+    @Override
+    public boolean isAffectedByFluids() {
+        return !isTame();
+    }
+
+    @Override
+    public boolean isPushedByFluid() {
+        return !isTame();
     }
 
     @Override
