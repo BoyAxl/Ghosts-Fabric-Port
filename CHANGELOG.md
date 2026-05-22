@@ -1,3 +1,10 @@
+# 👻 26.1.2-0.1.3 Fabric
+
+- 🌊 **Tamed ghosts now behave like proper little spirits underwater.** They can stay submerged without drowning, no longer get pushed upward by water physics, and should follow their owner much more naturally while diving.
+- 🫧 **Non-tamed ghosts still avoid water like before.** The underwater movement changes only apply once a ghost has been tamed.
+- 🕯️ **Torch-placing ghosts keep normal collision while working.** This avoids awkward phasing during placement behavior and keeps the interaction closer to vanilla expectations.
+- 🧪 **Tested in the local CurseForge Test instance.** Underwater follow behavior was checked in-game after the fix.
+
 # 1.3.2
 - Reduced spawn rate for ghosts and seedling ghosts
 - Changed the name of the small ghost to seedling ghost
