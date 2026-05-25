@@ -6,12 +6,9 @@
   "mixins": [
     "AxeItemMixin"
   ],
-  "client": [
-  ],
-  "server": [
-  ],
+  "client": [],
+  "server": [],
   "injectors": {
     "defaultRequire": 1
   }
-  }
-  
+}

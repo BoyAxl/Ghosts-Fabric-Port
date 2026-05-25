@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 public class GhostsBlockEntities {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<BlockEntityType<CalibratedHauntedEyeBlockEntity>> CALIBRATED_HAUNTED_EYE =
             register("calibrated_haunted_eye",

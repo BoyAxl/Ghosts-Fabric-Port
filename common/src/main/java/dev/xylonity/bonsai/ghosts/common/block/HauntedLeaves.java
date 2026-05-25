@@ -22,9 +22,7 @@ public class HauntedLeaves extends LeavesBlock {
     }
 
     @Override
-    protected void spawnFallingLeavesParticle(Level level, BlockPos pos, RandomSource random) {
-        ;;
-    }
+    protected void spawnFallingLeavesParticle(Level level, BlockPos pos, RandomSource random) { }
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {

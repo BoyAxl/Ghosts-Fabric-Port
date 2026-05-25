@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 public class GhostsCreativeTabs {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<CreativeModeTab> CREATIVE_TAB =
             Ghosts.PLATFORM.registerCreativeTab("ghosts_creative_tab",

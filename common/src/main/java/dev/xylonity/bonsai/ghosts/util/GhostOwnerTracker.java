@@ -17,9 +17,7 @@ public final class GhostOwnerTracker {
 
     private static final GhostOwnerTracker instance = new GhostOwnerTracker();
 
-    private GhostOwnerTracker() {
-        ;;
-    }
+    private GhostOwnerTracker() { }
 
     public static GhostOwnerTracker getInstance() {
         return instance;

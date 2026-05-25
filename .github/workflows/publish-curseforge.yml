@@ -23,6 +23,8 @@ jobs:
           java-version: 25
 
       - name: Build
+        env:
+          GITHUB_TAG: ${{ github.event.release.tag_name }}
         run: sh ./gradlew build
 
       - name: Publish to CurseForge
@@ -33,14 +35,17 @@ jobs:
 
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-          files: build/libs/!(*-@(dev|sources|javadoc|javadocs)).jar
+          files: build/libs/ghosts-fabric-!(*-sources).jar
           name: ${{ github.event.release.name }}
           version: ${{ github.event.release.tag_name }}
           version-type: release
           changelog: ${{ github.event.release.body }}
 
           loaders: fabric
-          game-versions: 26.1.2
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
           java: 25
 
           curseforge-dependencies: |

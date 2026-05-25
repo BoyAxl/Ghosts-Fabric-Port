@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 public class GhostsItems {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<SpawnEggItem> GHOST_SPAWN_EGG = registerSpawnEgg("ghost_spawn_egg", GhostsEntities.GHOST, 0xA5FFFF, 0x783D7C, properties("ghost_spawn_egg"));
     public static final Supplier<SpawnEggItem> SMALL_GHOST_SPAWN_EGG = registerSpawnEgg("small_ghost_spawn_egg", GhostsEntities.SMALL_GHOST, 0xA5FFFF, 0x00FF00, properties("small_ghost_spawn_egg"));

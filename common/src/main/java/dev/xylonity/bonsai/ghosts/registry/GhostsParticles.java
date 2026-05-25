@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 public class GhostsParticles {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<SimpleParticleType> FLYING_GHOST = registerParticle("flying_ghost", true);
 

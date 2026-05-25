@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 
 public class GhostsBlocks {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<Block> HAUNTED_PLANKS = register("haunted_planks", () -> new Block(properties("haunted_planks", BlockBehaviour.Properties.ofFullCopy(Blocks.ACACIA_PLANKS))));
     public static final Supplier<Block> HAUNTED_STAIRS = register("haunted_stairs", () -> new HauntedStair(Blocks.ACACIA_STAIRS.defaultBlockState(), properties("haunted_stairs", BlockBehaviour.Properties.ofFullCopy(Blocks.ACACIA_STAIRS))));

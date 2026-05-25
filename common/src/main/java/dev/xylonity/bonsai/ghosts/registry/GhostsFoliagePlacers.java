@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public class GhostsFoliagePlacers {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<FoliagePlacerType<HauntedFoliagePlacer>> HAUNTED_FOLIAGE = register("haunted_foliage", HauntedFoliagePlacer.CODEC);
 

@@ -1,4 +1,12 @@
-# 👻 26.1.2-0.1.3 Fabric
+# 🧹 0.1.4+26.1.x Fabric
+
+- 🧭 **Standardized the Fabric-only port metadata** around Minecraft `26.1.x`.
+- 🦎 **Relaxed GeckoLib compatibility to `5.5+`** for better compatibility across `26.1.2` and later `26.1.x` builds.
+- 📦 **Cleaned release artifact naming** to `ghosts-fabric-<version>+26.1.x.jar`.
+- 🧽 **Removed empty/common mixin metadata and IDE-only tracked files** without changing gameplay.
+- 🧪 **Tested with a clean build** and copied the final jar into the local TESTFABRIC instance.
+
+# 👻 0.1.3+26.1.x Fabric
 
 - 🌊 **Tamed ghosts now behave like proper little spirits underwater.** They can stay submerged without drowning, no longer get pushed upward by water physics, and should follow their owner much more naturally while diving.
 - 🫧 **Non-tamed ghosts still avoid water like before.** The underwater movement changes only apply once a ghost has been tamed.

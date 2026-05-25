@@ -2,17 +2,20 @@ plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
+def releaseVersion = System.getenv('GITHUB_TAG')?.replaceFirst(/^v/, '') ?: mod_version
+def minecraftVersionLabel = minecraft_version_label
+
 group = maven_group
-version = mod_version
+version = "${releaseVersion}+${minecraftVersionLabel}"
 
 base {
-    archivesName = mod_id
+    archivesName = "${mod_id}-fabric"
 }
 
 java {
     withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.toVersion(java_version)
+    targetCompatibility = JavaVersion.toVersion(java_version)
 }
 
 sourceSets {
@@ -37,11 +40,8 @@ repositories {
     mavenCentral()
 
     maven {
-        name = 'CurseMaven'
-        url = 'https://cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
-        }
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
     }
 }
 
@@ -50,7 +50,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
-    implementation "curse.maven:geckolib-388172:${geckolib_curseforge_file_id}"
+    implementation "maven.modrinth:geckolib:${geckolib_version}"
 
     compileOnly "org.jetbrains:annotations:26.0.2"
 
@@ -59,28 +59,33 @@ dependencies {
 }
 
 tasks.named('processResources', ProcessResources).configure {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     var replaceProperties = [
-            minecraft_version    : minecraft_version,
-            fabric_loader_version: fabric_loader_version,
-            fabric_api_version   : fabric_api_version,
-            java_version         : java_version,
-            mod_id               : mod_id,
-            mod_name             : mod_name,
-            mod_author           : mod_author,
-            mod_version          : mod_version,
-            mod_description      : mod_description,
-            license              : license,
-            geckolib_version     : geckolib_version,
+            minecraft_version            : minecraft_version,
+            minecraft_version_label      : minecraft_version_label,
+            minecraft_version_range      : minecraft_version_range,
+            fabric_loader_version        : fabric_loader_version,
+            fabric_loader_version_range  : fabric_loader_version_range,
+            fabric_api_version           : fabric_api_version,
+            fabric_api_version_range     : fabric_api_version_range,
+            java_version                 : java_version,
+            mod_id                       : mod_id,
+            mod_name                     : mod_name,
+            mod_version                  : project.version,
+            mod_description              : mod_description,
+            license                      : license,
+            geckolib_version             : geckolib_version,
     ]
 
     inputs.properties replaceProperties
 
-    filesMatching(['fabric.mod.json', 'pack.mcmeta', '*.mixins.json']) {
+    filesMatching(['fabric.mod.json', 'pack.mcmeta']) {
         expand replaceProperties
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 25
+    options.release = java_version.toInteger()
 }

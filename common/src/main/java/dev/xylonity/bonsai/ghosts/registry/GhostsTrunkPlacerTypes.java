@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 public class GhostsTrunkPlacerTypes {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<TrunkPlacerType<HauntedTrunkPlacer>> HAUNTED_TRUNK_PLACER = register("haunted_foliage", HauntedTrunkPlacer.CODEC);
 

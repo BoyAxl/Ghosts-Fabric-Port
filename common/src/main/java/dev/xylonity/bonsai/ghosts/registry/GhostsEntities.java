@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 
 public class GhostsEntities {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<EntityType<GhostEntity>> GHOST = registerEntity("ghost", GhostEntity::new, MobCategory.CREATURE, 0.6f, 0.6f, null);
     public static final Supplier<EntityType<SmallGhostEntity>> SMALL_GHOST = registerEntity("small_ghost", SmallGhostEntity::new, MobCategory.CREATURE, 0.4f, 0.4f, null);

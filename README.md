@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <strong>Unofficial compatibility port</strong> of <strong>Ghosts</strong> for <strong>Minecraft 26.1.2</strong>, <strong>Fabric</strong>, and <strong>Java 25</strong>.
+  <strong>Unofficial compatibility port</strong> of <strong>Ghosts</strong> for <strong>Minecraft 26.1.x</strong>, <strong>Fabric</strong>, and <strong>Java 25</strong>.
 </p>
 
 > **This is not an official release from the original Ghosts team.**  
@@ -17,11 +17,12 @@ This repository keeps a small compatibility port for newer Minecraft/Fabric vers
 
 ## 📦 Requirements
 
-- **Minecraft:** `26.1.2`
+- **Minecraft build target:** `26.1.2`
+- **Minecraft compatibility:** `26.1.x`
 - **Java:** `25` or newer
 - **Fabric Loader:** `0.19.2` or newer
-- **Fabric API:** `0.149.0+26.1.2` or newer
-- **GeckoLib:** `5.5.1` or newer
+- **Fabric API:** `0.144.3` or newer
+- **GeckoLib:** `5.5` or newer
 
 ## 🌙 Original Mod
 
@@ -51,7 +52,7 @@ sh ./gradlew build --console=plain
 The built jars are generated in:
 
 ```text
-build/libs/
+build/libs/ghosts-fabric-0.1.4+26.1.x.jar
 ```
 
 ## 🧪 Status

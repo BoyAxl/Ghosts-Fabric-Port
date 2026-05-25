@@ -83,7 +83,6 @@ public final class ConfigManager {
             try {
                 setPrimitive(field, val);
             } catch (Exception ignored) {
-                ;;
             }
         }
 

@@ -26,9 +26,7 @@ public class HauntedBoat extends Boat {
         this.zo = z;
     }
 
-    public void setBoatVariant(Type variant) {
-        ;;
-    }
+    public void setBoatVariant(Type variant) { }
 
     public Type getBoatVariant() {
         return Type.HAUNTED;

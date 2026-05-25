@@ -30,10 +30,10 @@ Do not put the token in a commit, release body, Discord message, or issue.
 
 1. Update `mod_version` in `gradle.properties`.
 
-For example, if the previous CurseForge file was `ghosts-26.1.2-0.1.0-fabric.jar`, use:
+For example, if the previous Fabric port version was `0.1.4`, use:
 
 ```properties
-mod_version=26.1.2-0.1.1-fabric
+mod_version=0.1.5
 ```
 
 2. Commit and push the change.
@@ -41,19 +41,21 @@ mod_version=26.1.2-0.1.1-fabric
 4. Create a new tag, for example:
 
 ```text
-v26.1.2-0.1.1-fabric
+v0.1.5
 ```
 
 5. Set the release title, for example:
 
 ```text
-Ghosts 26.1.2 - 0.1.1 Fabric (Unofficial Port)
+Ghosts 0.1.5 - Fabric 26.1.x (Unofficial Port)
 ```
 
 6. Write the changelog in the release body.
 7. Click Publish release.
 
-GitHub Actions will build the mod, attach the jar to the GitHub Release, and upload the same jar to CurseForge. The GitHub Release body becomes the CurseForge changelog.
+GitHub Actions will build the mod as `ghosts-fabric-<version>+26.1.x.jar`, attach the jar to the GitHub Release, and upload the same jar to CurseForge. The GitHub Release body becomes the CurseForge changelog.
+
+The mod metadata declares Minecraft compatibility as `~26.1`, so the same jar can load across the 26.1.x line when Mojang/Fabric do not introduce breaking changes. CurseForge game versions are explicit in `.github/workflows/publish-curseforge.yml`; add future 26.1.x patch versions there when CurseForge exposes them.
 
 ## If it fails
 

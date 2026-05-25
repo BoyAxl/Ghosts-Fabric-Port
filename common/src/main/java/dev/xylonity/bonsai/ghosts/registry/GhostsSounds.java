@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 public class GhostsSounds {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final Supplier<SoundEvent> GHOST_AMBIENT = registerSound("ghost_ambient", () -> SoundEvent.createVariableRangeEvent(Ghosts.of("ghost_ambient")));
     public static final Supplier<SoundEvent> GHOST_DEATH = registerSound("ghost_death", () -> SoundEvent.createVariableRangeEvent(Ghosts.of("ghost_death")));

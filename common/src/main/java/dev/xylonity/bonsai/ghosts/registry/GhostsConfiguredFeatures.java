@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvi
 
 public class GhostsConfiguredFeatures {
 
-    public static void init() { ;; }
+    public static void init() { }
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> HAUNTED_TREE = ResourceKey.create(Registries.CONFIGURED_FEATURE, Ghosts.of("haunted_tree"));
 

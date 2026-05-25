@@ -20,9 +20,7 @@ public class HauntedChestBoat extends ChestBoat {
         this.zo = z;
     }
 
-    public void setBoatVariant(HauntedBoat.Type variant) {
-        ;;
-    }
+    public void setBoatVariant(HauntedBoat.Type variant) { }
 
     public HauntedBoat.Type getBoatVariant() {
         return HauntedBoat.Type.HAUNTED;

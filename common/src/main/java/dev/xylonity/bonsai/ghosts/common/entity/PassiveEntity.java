@@ -39,9 +39,7 @@ public class PassiveEntity extends Animal implements GeoEntity {
     }
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-        ;;
-    }
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) { }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {

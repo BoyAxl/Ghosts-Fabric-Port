@@ -5,10 +5,13 @@
     "name": "${mod_name}",
     "description": "${mod_description}",
     "authors": [
-        "${mod_author}"
+        "Joosh7889",
+        "Xylonity"
     ],
     "contact": {
-        "homepage": "https://modrinth.com/mod/ghost"
+        "homepage": "https://modrinth.com/mod/ghost",
+        "sources": "https://github.com/BoyAxl/Ghosts-Fabric-Port",
+        "issues": "https://github.com/BoyAxl/Ghosts-Fabric-Port/issues"
     },
     "license": "${license}",
     "icon": "ghosts.png",
@@ -22,13 +25,12 @@
         ]
     },
     "mixins": [
-        "${mod_id}.mixins.json",
         "ghosts.fabric.mixins.json"
     ],
     "depends": {
-        "fabricloader": ">=${fabric_loader_version}",
-        "fabric-api": ">=${fabric_api_version}",
-        "minecraft": "${minecraft_version}",
+        "fabricloader": "${fabric_loader_version_range}",
+        "fabric-api": "${fabric_api_version_range}",
+        "minecraft": "${minecraft_version_range}",
         "java": ">=${java_version}",
         "geckolib": ">=${geckolib_version}"
     }
